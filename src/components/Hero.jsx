@@ -31,7 +31,10 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
         <div
           key={m.id}
           className={`hero-slide${idx === i ? ' active' : ''}`}
-          style={{ backgroundImage: `url(${m.bannerImage || m.coverImage.large})` }}
+          style={{
+            '--bg-wide': `url(${m.bannerImage || m.coverImage.extraLarge || m.coverImage.large})`,
+            '--bg-tall': `url(${m.coverImage.extraLarge || m.coverImage.large})`,
+          }}
           aria-hidden={idx !== i}
         />
       ))}

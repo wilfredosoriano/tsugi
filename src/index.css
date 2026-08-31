@@ -263,6 +263,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .hero-slide {
   position: absolute; inset: 0;
+  background-image: var(--bg-wide);
   background-size: cover; background-position: center 30%;
   opacity: 0; transition: opacity 900ms var(--ease);
 }
@@ -324,6 +325,10 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 @media (max-width: 640px) {
   .hero-wrap { padding-top: 12px; }
   .hero { height: auto; aspect-ratio: 3 / 4; min-height: unset; }
+  /* Portrait cover art (much higher native resolution than the wide,
+     low-res banner) matches this box's aspect ratio, so it fills it
+     without the heavy upscaling that made the banner look soft. */
+  .hero-slide { background-image: var(--bg-tall); background-position: center 22%; }
   .hero-body { padding: 0 16px 18px; }
   .hero-title { font-size: 1.35rem; margin-bottom: 6px; }
   .hero-meta { margin-bottom: 0; }
