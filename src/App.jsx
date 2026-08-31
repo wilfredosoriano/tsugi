@@ -263,7 +263,9 @@ export default function App() {
       />
 
       {featured.length > 0 && (
-        <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+        <div className="wrap hero-wrap">
+          <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+        </div>
       )}
 
       <main className="wrap">
