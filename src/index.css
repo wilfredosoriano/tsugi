@@ -367,6 +367,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 .btn {
   position: relative; overflow: hidden; isolation: isolate;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   background: var(--accent-gradient); color: #fff;
   padding: 12px 24px; border-radius: 999px;
   font-weight: 700; font-size: 0.88rem;
@@ -544,7 +545,6 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .sheet-save {
   width: 100%; margin-top: 14px; padding: 11px 12px; font-size: 0.82rem;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .sheet-save.on { background: var(--bg-elevated-2); color: var(--text); box-shadow: none; }
 .trailer-link { text-decoration: none; }
