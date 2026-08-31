@@ -249,6 +249,69 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .rail-saved .num { color: inherit; font-weight: 800; }
 .rail-saved:hover { border-color: var(--accent) !important; }
 
+/* ── hero ───────────────────────────────────────────────── */
+.hero {
+  position: relative; overflow: hidden;
+  height: min(62vh, 560px); min-height: 360px;
+  border-bottom: 1px solid var(--border);
+}
+.hero-slide {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center 30%;
+  opacity: 0; transition: opacity 900ms var(--ease);
+}
+.hero-slide.active { opacity: 1; }
+.hero-scrim {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to top, var(--bg) 0%, rgba(0, 0, 0, 0.15) 45%, transparent 75%),
+    linear-gradient(to right, var(--bg) 0%, rgba(0, 0, 0, 0.35) 32%, transparent 62%);
+}
+.hero-body {
+  position: absolute; left: 0; bottom: 0; z-index: 1;
+  max-width: 640px; padding: 0 24px 40px; margin: 0 auto;
+  width: 100%; box-sizing: border-box;
+}
+@media (min-width: 640px) { .hero-body { padding: 0 40px 48px; } }
+.hero-eyebrow { letter-spacing: 0.12em; margin-bottom: 8px; }
+.hero-title {
+  font-size: clamp(1.6rem, 4.4vw, 2.7rem); line-height: 1.08;
+  margin-bottom: 12px; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+}
+.hero-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.hero-meta .stars { color: var(--accent-strong); }
+.hero-meta .num { color: var(--text-soft); font-size: 0.85rem; }
+.hero-synopsis {
+  color: var(--text-soft); font-size: 0.94rem; line-height: 1.55;
+  max-width: 54ch; margin-bottom: 22px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.hero-nav {
+  position: absolute; top: 50%; z-index: 1; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(10, 10, 15, 0.4); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--dur-2) var(--ease), background var(--dur-1) var(--ease);
+}
+.hero:hover .hero-nav { opacity: 1; }
+.hero-nav:hover { background: rgba(10, 10, 15, 0.65); }
+.hero-nav.prev { left: 16px; }
+.hero-nav.next { right: 16px; }
+@media (max-width: 640px) { .hero-nav { display: none; } }
+
+.hero-dots {
+  position: absolute; right: 24px; bottom: 20px; z-index: 1;
+  display: flex; gap: 7px;
+}
+.hero-dots button {
+  width: 8px; height: 8px; border-radius: 50%; padding: 0;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+.hero-dots button.active { background: #fff; transform: scale(1.3); }
+
 /* ── ask panel ──────────────────────────────────────────── */
 .ask {
   margin: 26px 0; border-radius: var(--radius-lg); background: var(--bg-elevated);

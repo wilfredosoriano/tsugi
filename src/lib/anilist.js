@@ -10,6 +10,7 @@ const MEDIA_FIELDS = `
   id
   title { romaji english native }
   coverImage { large }
+  bannerImage
   averageScore
   episodes
   seasonYear
@@ -253,6 +254,24 @@ export async function fetchCandidates(question) {
   }
 
   return { reference, pool: [...pool.values()].slice(0, 40) };
+}
+
+/**
+ * A pool of well-known, banner-image-having titles to draw the homepage
+ * hero from. Popularity-sorted so the pool stays full of titles worth
+ * spotlighting even after filtering out ones AniList has no banner art for.
+ */
+export async function fetchFeaturedPool() {
+  const data = await gql(
+    `query {
+      Page(page: 1, perPage: 30) {
+        media(type: ANIME, isAdult: false, sort: POPULARITY_DESC) {
+          ${MEDIA_FIELDS}
+        }
+      }
+    }`
+  );
+  return data.Page.media.filter((m) => hasCover(m) && m.bannerImage);
 }
 
 /** Minimal shape sent to the ranking endpoint — no covers, no descriptions. */

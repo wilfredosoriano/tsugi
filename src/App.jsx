@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Masthead from './components/Masthead.jsx';
+import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ToastStack from './components/Toast.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchById, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
+import { pickDaily } from './lib/dailyPick.js';
 import { useSaved } from './hooks/useSaved.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
@@ -47,6 +49,7 @@ export default function App() {
   const [askStage, setAskStage] = useState('');
   const [askError, setAskError] = useState('');
 
+  const [featured, setFeatured] = useState([]);
   const [open, setOpen] = useState(null);
   const { saved, isSaved, toggle } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -57,6 +60,14 @@ export default function App() {
     toggle(media);
     pushToast(wasSaved ? `Removed “${displayTitle(media)}”` : `Saved “${displayTitle(media)}” to watch`);
   }, [isSaved, toggle, pushToast]);
+
+  /* ── homepage hero: a handful of picks that hold steady all day
+     and rotate to a different set tomorrow ──────────────────── */
+  useEffect(() => {
+    fetchFeaturedPool()
+      .then((pool) => { if (pool.length) setFeatured(pickDaily(pool, 5)); })
+      .catch(() => {});
+  }, []);
 
   /* ── deep link: open a title straight from a shared URL ────── */
   useEffect(() => {
@@ -250,6 +261,10 @@ export default function App() {
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
       />
+
+      {featured.length > 0 && (
+        <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+      )}
 
       <main className="wrap">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
