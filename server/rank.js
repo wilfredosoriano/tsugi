@@ -16,7 +16,7 @@ const DEFAULT_MODEL = 'openai/gpt-oss-120b';
 
 const MAX_QUESTION = 500;
 const MAX_POOL = 60;
-const PICKS = 6;
+const PICKS = 10;
 
 const SYSTEM_PROMPT = [
   'You recommend anime, choosing ONLY from the catalog rows provided.',
@@ -88,7 +88,7 @@ export async function rankPicks({ question, pool, apiKey, model }) {
       body: JSON.stringify({
         model: effectiveModel,
         temperature: 0.4,
-        max_tokens: 900,
+        max_tokens: 1300,
         response_format: { type: 'json_object' },
         ...(isReasoningModel && { reasoning_format: 'hidden', reasoning_effort: 'low' }),
         messages: [

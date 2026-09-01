@@ -174,7 +174,7 @@ export default function App() {
   /* ── ask ────────────────────────────────────────────────── */
   async function rank(requestText, pool, reference) {
     let intro = '';
-    let picks = pool.slice(0, 6);
+    let picks = pool.slice(0, 10);
     let degraded = '';
 
     try {
