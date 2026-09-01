@@ -223,6 +223,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   pointer-events: none; background: linear-gradient(to right, transparent, var(--bg));
 }
 .rail {
+  position: relative;
   display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 14px;
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -231,7 +232,15 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .rail::-webkit-scrollbar { display: none; }
 .rail.dragging { cursor: grabbing; user-select: none; scroll-snap-type: none; }
 .rail.dragging button { pointer-events: none; }
+/* A single pill that slides/resizes to the active button's own measured
+   position instead of each button instantly swapping its background. */
+.rail-indicator {
+  position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none;
+  border-radius: 999px; background: var(--accent-gradient);
+  transition: transform var(--dur-2) var(--ease), width var(--dur-2) var(--ease), height var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease);
+}
 .rail button, .rail a {
+  position: relative; z-index: 1;
   padding: 9px 16px; white-space: nowrap; border-radius: 999px;
   font-weight: 600; font-size: 0.84rem;
   background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
@@ -240,7 +249,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .rail button:hover { border-color: var(--accent); color: var(--text); }
 .rail button:active { transform: scale(0.95); }
 .rail button[aria-pressed='true'] {
-  background: var(--accent-gradient); color: #fff; border-color: transparent;
+  background: transparent; color: #fff; border-color: transparent;
 }
 .rail-saved {
   margin-left: 4px; display: flex; align-items: center; gap: 7px;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
@@ -22,6 +22,19 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
   const debounceRef = useRef(null);
   const dragRef = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
   const [dragging, setDragging] = useState(false);
+  const pillRefs = useRef({});
+  const [indicator, setIndicator] = useState(null); // { left, top, width, height }
+
+  // Slides/resizes a shared pill behind the active button instead of each
+  // button instantly swapping its own background — measured off the real
+  // DOM node so it's exact regardless of label length or font metrics.
+  // useLayoutEffect (not useEffect) so the very first paint already has the
+  // right position — nothing to visibly animate in from on mount.
+  useLayoutEffect(() => {
+    const btn = pillRefs.current[activeGenre ?? '__all__'];
+    if (!btn) return;
+    setIndicator({ left: btn.offsetLeft, top: btn.offsetTop, width: btn.offsetWidth, height: btn.offsetHeight });
+  }, [activeGenre]);
 
   // A plain mouse wheel doesn't scroll a horizontal row by default (only
   // touch swipe / trackpad horizontal gestures do) — and the scrollbar is
@@ -254,16 +267,39 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
           onMouseDown={onRailMouseDown}
           onClickCapture={onRailClickCapture}
         >
-          <button aria-pressed={activeGenre === null} onClick={() => onGenre(null)}>
+          <span
+            className="rail-indicator"
+            aria-hidden="true"
+            style={indicator ? {
+              transform: `translate(${indicator.left}px, ${indicator.top}px)`,
+              width: indicator.width,
+              height: indicator.height,
+            } : { opacity: 0 }}
+          />
+          <button
+            ref={(el) => (pillRefs.current.__all__ = el)}
+            aria-pressed={activeGenre === null}
+            onClick={() => onGenre(null)}
+          >
             Trending
           </button>
           {GENRES.map((g) => (
-            <button key={g} aria-pressed={activeGenre === g} onClick={() => onGenre(g)}>
+            <button
+              key={g}
+              ref={(el) => (pillRefs.current[g] = el)}
+              aria-pressed={activeGenre === g}
+              onClick={() => onGenre(g)}
+            >
               {g}
             </button>
           ))}
           {DEMOGRAPHICS.map((g) => (
-            <button key={g} aria-pressed={activeGenre === g} onClick={() => onGenre(g)}>
+            <button
+              key={g}
+              ref={(el) => (pillRefs.current[g] = el)}
+              aria-pressed={activeGenre === g}
+              onClick={() => onGenre(g)}
+            >
               {g}
             </button>
           ))}
