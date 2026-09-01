@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
-import { GENRES, quickSearch, fetchById } from '../lib/anilist.js';
+import { GENRES, DEMOGRAPHICS, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 
 const DEBOUNCE_MS = 260;
@@ -258,6 +258,11 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
             Trending
           </button>
           {GENRES.map((g) => (
+            <button key={g} aria-pressed={activeGenre === g} onClick={() => onGenre(g)}>
+              {g}
+            </button>
+          ))}
+          {DEMOGRAPHICS.map((g) => (
             <button key={g} aria-pressed={activeGenre === g} onClick={() => onGenre(g)}>
               {g}
             </button>

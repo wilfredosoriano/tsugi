@@ -30,6 +30,14 @@ export const GENRES = [
   'Sports', 'Music', 'Horror', 'Mecha',
 ];
 
+/**
+ * Shounen/Shoujo/Seinen/Josei aren't genres in AniList's schema — they're
+ * audience-demographic tags — so filtering by one needs the `tag` query
+ * argument instead of `genre`. Kept as a separate list so callers know
+ * which argument to send.
+ */
+export const DEMOGRAPHICS = ['Shounen', 'Shoujo', 'Seinen', 'Josei'];
+
 async function gql(query, variables = {}) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
@@ -55,19 +63,20 @@ export const SORTS = [
   { value: 'START_DATE_DESC', label: 'Newest' },
 ];
 
-/** Trending, genre-filtered, or search results for the main grid. Paginated. */
+/** Trending, genre/demographic-filtered, or search results for the main grid. Paginated. */
 export async function fetchGrid({ genre = null, search = null, sort = null, page = 1 } = {}) {
-  const query = `query ($genre: String, $search: String, $sort: [MediaSort], $page: Int) {
+  const filterField = genre && DEMOGRAPHICS.includes(genre) ? 'tag' : 'genre';
+  const query = `query ($filterValue: String, $search: String, $sort: [MediaSort], $page: Int) {
     Page(page: $page, perPage: 24) {
       pageInfo { hasNextPage }
-      media(type: ANIME, isAdult: false, genre: $genre, search: $search, sort: $sort) {
+      media(type: ANIME, isAdult: false, ${filterField}: $filterValue, search: $search, sort: $sort) {
         ${MEDIA_FIELDS}
       }
     }
   }`;
 
   const effectiveSort = search ? ['SEARCH_MATCH'] : [sort || (genre ? 'SCORE_DESC' : 'TRENDING_DESC')];
-  const data = await gql(query, { genre, search, sort: effectiveSort, page });
+  const data = await gql(query, { filterValue: genre, search, sort: effectiveSort, page });
   return {
     items: data.Page.media.filter(hasCover),
     hasNextPage: Boolean(data.Page.pageInfo?.hasNextPage),
