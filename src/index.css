@@ -261,6 +261,12 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
 }
+.skel-hero {
+  background: var(--bg-elevated);
+  background-image: linear-gradient(100deg, transparent 30%, var(--bg-elevated-2) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
 .hero-slide {
   position: absolute; inset: 0;
   background-image: var(--bg-wide);

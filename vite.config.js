@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { rankPicks } from './server/rank.js';
+import { buildOgHtml } from './server/og.js';
 
 /**
  * In production, /api/recommend is served by a Vercel Function (api/) or a
@@ -39,6 +40,16 @@ function devApi(env) {
           res.statusCode = err.status || 500;
           res.end(JSON.stringify({ error: err.message }));
         }
+      });
+
+      // /api/og likewise only exists as a Vercel/Cloudflare function in
+      // production (see vercel.json for the bot-user-agent routing side);
+      // mounted here so it's curl-able during local dev too.
+      server.middlewares.use('/api/og', async (req, res) => {
+        const id = new URL(req.url, 'http://x').searchParams.get('id');
+        const html = await buildOgHtml({ id, siteUrl: `http://localhost:${server.config.server.port}` });
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(html);
       });
     },
   };

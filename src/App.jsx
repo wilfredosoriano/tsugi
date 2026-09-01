@@ -10,6 +10,7 @@ import { pickDaily } from './lib/dailyPick.js';
 import { useSaved } from './hooks/useSaved.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
+import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
 import { displayTitle } from './lib/format.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
@@ -50,6 +51,7 @@ export default function App() {
   const [askError, setAskError] = useState('');
 
   const [featured, setFeatured] = useState([]);
+  const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
   const [open, setOpen] = useState(null);
   const { saved, isSaved, toggle } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -65,8 +67,11 @@ export default function App() {
      and rotate to a different set tomorrow ──────────────────── */
   useEffect(() => {
     fetchFeaturedPool()
-      .then((pool) => { if (pool.length) setFeatured(pickDaily(pool, 5)); })
-      .catch(() => {});
+      .then((pool) => {
+        if (pool.length) setFeatured(pickDaily(pool, 5));
+        setFeaturedState('ready');
+      })
+      .catch(() => setFeaturedState('error'));
   }, []);
 
   /* ── deep link: open a title straight from a shared URL ────── */
@@ -156,6 +161,9 @@ export default function App() {
       setLoadingMore(false);
     }
   }, [genre, search, sort, page]);
+
+  const canLoadMore = hasMore && gridState === 'ready' && !loadingMore;
+  const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
 
   const gridTitle = search
     ? `Results for “${search}”`
@@ -262,9 +270,11 @@ export default function App() {
         savedCount={saved.length}
       />
 
-      {featured.length > 0 && (
+      {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (
         <div className="wrap hero-wrap">
-          <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+          {featured.length > 0
+            ? <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+            : <div className="hero skel-hero" aria-hidden="true" />}
         </div>
       )}
 
@@ -337,11 +347,9 @@ export default function App() {
             <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
               <Grid items={gridItems} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
             </div>
-            {hasMore && gridState === 'ready' && (
-              <div className="more">
-                <button className="btn ghost" onClick={loadMore} disabled={loadingMore}>
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
+            {hasMore && (
+              <div className="more" ref={sentinelRef}>
+                {loadingMore && <Loading>Loading more</Loading>}
               </div>
             )}
           </>

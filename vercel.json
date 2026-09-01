@@ -1,0 +1,15 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Twitterbot|Discordbot|Slackbot|WhatsApp|TelegramBot|LinkedInBot|Pinterest|SkypeUriPreview|redditbot|Embedly|vkShare).*"
+        }
+      ],
+      "destination": "/api/og"
+    }
+  ]
+}
