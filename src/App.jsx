@@ -7,6 +7,7 @@ import ToastStack from './components/Toast.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
+import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
@@ -53,10 +54,11 @@ export default function App() {
   const [featured, setFeatured] = useState([]);
   const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
 
+  const [becauseSavedSeedId, setBecauseSavedSeedId] = useState(null);
   const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
   const [becauseSavedState, setBecauseSavedState] = useState('idle'); // idle | loading | ready | error
   const [open, setOpen] = useState(null);
-  const { saved, isSaved, toggle } = useSaved();
+  const { saved, isSaved, toggle, ready: savedReady } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
 
@@ -77,20 +79,53 @@ export default function App() {
       .catch(() => setFeaturedState('error'));
   }, []);
 
-  /* ── "Because you saved X": a personalized row seeded by whatever was
-     most recently added to want-to-watch, run through the same
-     candidate-pool + AI-ranking pipeline as Ask, just without a typed
-     question. Keyed on the top item's id (not the whole array) so removing
-     an older saved title doesn't trigger a refetch. ─────────────────── */
-  const topSavedId = saved[0]?.id ?? null;
+  /* ── "Because you saved X": a personalized row seeded by a title from
+     want-to-watch, run through the same candidate-pool + AI-ranking
+     pipeline as Ask, just without a typed question.
+
+     The seed is picked once (randomly, so a long list gets represented
+     over time instead of always being whatever was saved most recently)
+     and only re-picked if that title drops out of the list — adding
+     something new doesn't reshuffle it mid-session. Results are cached
+     per title in localStorage so re-landing on a seed we've already
+     ranked (a later session, or the same seed surviving a re-pick check)
+     doesn't re-hit AniList + the AI, and the cache entry is dropped the
+     moment its title is unsaved.
+
+     Gated on `savedReady`: `saved` starts as [] for one render while
+     useSaved is still reading localStorage, and without this guard that
+     transient empty state reads as "nothing saved" — pruning would wipe
+     every cache entry on every single page load, before hydration even
+     finishes. ─────────────────────────────────────────────────────── */
   useEffect(() => {
-    if (topSavedId == null) {
+    if (!savedReady) return;
+    pruneBecauseSavedCache(saved.map((m) => m.id));
+    if (saved.length === 0) {
+      setBecauseSavedSeedId(null);
+      return;
+    }
+    setBecauseSavedSeedId((current) =>
+      saved.some((m) => m.id === current) ? current : saved[Math.floor(Math.random() * saved.length)].id
+    );
+  }, [saved, savedReady]);
+
+  useEffect(() => {
+    if (becauseSavedSeedId == null) {
       setBecauseSaved(null);
       setBecauseSavedState('idle');
       return undefined;
     }
 
-    const reference = saved[0];
+    const reference = saved.find((m) => m.id === becauseSavedSeedId);
+    if (!reference) return undefined; // the picking effect above will settle this next tick
+
+    const cached = getCachedRecommendation(reference.id);
+    if (cached) {
+      setBecauseSaved({ ...cached, reference });
+      setBecauseSavedState('ready');
+      return undefined;
+    }
+
     let cancelled = false;
     setBecauseSavedState('loading');
 
@@ -102,9 +137,11 @@ export default function App() {
           setBecauseSavedState('error');
           return;
         }
-        const result = await rankPool(`More anime like ${displayTitle(reference)}`, pool);
+        const { intro, picks, degraded } = await rankPool(`More anime like ${displayTitle(reference)}`, pool);
         if (cancelled) return;
-        setBecauseSaved({ ...result, reference, ranked: !result.degraded });
+        const result = { intro, picks, degraded, ranked: !degraded };
+        setCachedRecommendation(reference.id, result);
+        setBecauseSaved({ ...result, reference });
         setBecauseSavedState('ready');
       } catch {
         if (!cancelled) setBecauseSavedState('error');
@@ -112,7 +149,7 @@ export default function App() {
     })();
 
     return () => { cancelled = true; };
-  }, [topSavedId]);
+  }, [becauseSavedSeedId]);
 
   /* ── deep link: open a title straight from a shared URL ────── */
   useEffect(() => {
@@ -210,6 +247,8 @@ export default function App() {
     : genre
       ? `Top ${genre}`
       : 'Trending now';
+
+  const becauseSavedReference = becauseSaved?.reference ?? saved.find((m) => m.id === becauseSavedSeedId) ?? null;
 
   /* ── ask ────────────────────────────────────────────────── */
   async function rankPool(requestText, pool) {
@@ -333,10 +372,10 @@ export default function App() {
           </div>
         )}
 
-        {saved.length > 0 && becauseSavedState !== 'idle' && (
+        {becauseSavedReference && becauseSavedState !== 'idle' && (
           <section>
             <SectionHead
-              title={`Because you saved “${displayTitle(saved[0])}”`}
+              title={`Because you saved “${displayTitle(becauseSavedReference)}”`}
               count={becauseSaved ? `${becauseSaved.picks.length} picks` : null}
             />
             {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}

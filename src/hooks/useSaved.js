@@ -39,5 +39,5 @@ export function useSaved() {
     );
   }, []);
 
-  return { saved, isSaved, toggle };
+  return { saved, isSaved, toggle, ready };
 }
