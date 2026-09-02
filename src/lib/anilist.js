@@ -46,7 +46,7 @@ async function gql(query, variables = {}) {
   });
 
   if (res.status === 429) {
-    throw new Error('AniList rate limit reached. Wait about a minute.');
+    throw new Error('Too many requests right now. Please wait a moment and try again.');
   }
 
   const json = await res.json();
@@ -200,66 +200,89 @@ async function findReference(question) {
   }
 }
 
+/** A pool of high scorers, used whenever a reference-driven pool comes back thin. */
+async function broadPool() {
+  const data = await gql(
+    `query {
+      Page(page: 1, perPage: 40) {
+        media(type: ANIME, isAdult: false, sort: SCORE_DESC) { ${MEDIA_FIELDS} }
+      }
+    }`
+  );
+  return data.Page.media.filter(hasCover);
+}
+
 /**
  * The grounding step. Builds a pool of real catalog entries BEFORE the model
- * sees anything, from three sources in order of specificity:
+ * sees anything, from two sources in order of specificity:
  *   1. the reference title's own curated recommendation graph
  *   2. high scorers sharing the reference's strongest tags
- *   3. a broad quality pool, if the first two came back thin
  */
-export async function fetchCandidates(question) {
-  const reference = await findReference(question);
+async function poolFromReference(referenceId) {
   const pool = new Map();
+  const data = await gql(
+    `query ($id: Int) {
+      Media(id: $id) {
+        tags { name rank }
+        recommendations(sort: RATING_DESC, perPage: 24) {
+          nodes { mediaRecommendation { ${MEDIA_FIELDS} } }
+        }
+      }
+    }`,
+    { id: referenceId }
+  );
 
-  if (reference) {
-    const data = await gql(
-      `query ($id: Int) {
-        Media(id: $id) {
-          tags { name rank }
-          recommendations(sort: RATING_DESC, perPage: 24) {
-            nodes { mediaRecommendation { ${MEDIA_FIELDS} } }
+  for (const node of data.Media.recommendations.nodes || []) {
+    const m = node.mediaRecommendation;
+    if (hasCover(m) && m.id !== referenceId) pool.set(m.id, m);
+  }
+
+  const tags = (data.Media.tags || [])
+    .filter((t) => t.rank >= 70)
+    .slice(0, 4)
+    .map((t) => t.name);
+
+  if (tags.length) {
+    const widened = await gql(
+      `query ($tags: [String]) {
+        Page(page: 1, perPage: 24) {
+          media(type: ANIME, isAdult: false, tag_in: $tags, sort: SCORE_DESC) {
+            ${MEDIA_FIELDS}
           }
         }
       }`,
-      { id: reference.id }
+      { tags }
     );
-
-    for (const node of data.Media.recommendations.nodes || []) {
-      const m = node.mediaRecommendation;
-      if (hasCover(m) && m.id !== reference.id) pool.set(m.id, m);
-    }
-
-    const tags = (data.Media.tags || [])
-      .filter((t) => t.rank >= 70)
-      .slice(0, 4)
-      .map((t) => t.name);
-
-    if (tags.length) {
-      const widened = await gql(
-        `query ($tags: [String]) {
-          Page(page: 1, perPage: 24) {
-            media(type: ANIME, isAdult: false, tag_in: $tags, sort: SCORE_DESC) {
-              ${MEDIA_FIELDS}
-            }
-          }
-        }`,
-        { tags }
-      );
-      for (const m of widened.Page.media) {
-        if (hasCover(m) && m.id !== reference.id) pool.set(m.id, m);
-      }
+    for (const m of widened.Page.media) {
+      if (hasCover(m) && m.id !== referenceId) pool.set(m.id, m);
     }
   }
 
+  return pool;
+}
+
+/** Grounds a natural-language question ("similar to X") in the real catalog. */
+export async function fetchCandidates(question) {
+  const reference = await findReference(question);
+  const pool = reference ? await poolFromReference(reference.id) : new Map();
+
   if (pool.size < 14) {
-    const broad = await gql(
-      `query {
-        Page(page: 1, perPage: 40) {
-          media(type: ANIME, isAdult: false, sort: SCORE_DESC) { ${MEDIA_FIELDS} }
-        }
-      }`
-    );
-    for (const m of broad.Page.media) if (hasCover(m)) pool.set(m.id, m);
+    for (const m of await broadPool()) pool.set(m.id, m);
+  }
+
+  return { reference, pool: [...pool.values()].slice(0, 40) };
+}
+
+/**
+ * Same grounding step, seeded directly by a known title instead of parsing
+ * one out of a question — used to personalize a row off something the user
+ * already saved, with no NL question involved.
+ */
+export async function fetchCandidatesForMedia(reference) {
+  const pool = await poolFromReference(reference.id);
+
+  if (pool.size < 14) {
+    for (const m of await broadPool()) pool.set(m.id, m);
   }
 
   return { reference, pool: [...pool.values()].slice(0, 40) };

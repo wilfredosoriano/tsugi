@@ -218,7 +218,7 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
                 <div className="live-search-status">Searching…</div>
               )}
               {sugState === 'error' && (
-                <div className="live-search-status">Couldn’t reach AniList. Try again.</div>
+                <div className="live-search-status">Couldn’t reach the server. Try again.</div>
               )}
               {sugState === 'ready' && suggestions.length === 0 && (
                 <div className="live-search-status">No matches for “{term.trim()}”.</div>

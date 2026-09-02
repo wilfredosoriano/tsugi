@@ -5,7 +5,7 @@ import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ToastStack from './components/Toast.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { useSaved } from './hooks/useSaved.js';
 import { useTheme } from './hooks/useTheme.js';
@@ -52,6 +52,9 @@ export default function App() {
 
   const [featured, setFeatured] = useState([]);
   const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
+
+  const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
+  const [becauseSavedState, setBecauseSavedState] = useState('idle'); // idle | loading | ready | error
   const [open, setOpen] = useState(null);
   const { saved, isSaved, toggle } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -73,6 +76,43 @@ export default function App() {
       })
       .catch(() => setFeaturedState('error'));
   }, []);
+
+  /* ── "Because you saved X": a personalized row seeded by whatever was
+     most recently added to want-to-watch, run through the same
+     candidate-pool + AI-ranking pipeline as Ask, just without a typed
+     question. Keyed on the top item's id (not the whole array) so removing
+     an older saved title doesn't trigger a refetch. ─────────────────── */
+  const topSavedId = saved[0]?.id ?? null;
+  useEffect(() => {
+    if (topSavedId == null) {
+      setBecauseSaved(null);
+      setBecauseSavedState('idle');
+      return undefined;
+    }
+
+    const reference = saved[0];
+    let cancelled = false;
+    setBecauseSavedState('loading');
+
+    (async () => {
+      try {
+        const { pool } = await fetchCandidatesForMedia(reference);
+        if (cancelled) return;
+        if (!pool.length) {
+          setBecauseSavedState('error');
+          return;
+        }
+        const result = await rankPool(`More anime like ${displayTitle(reference)}`, pool);
+        if (cancelled) return;
+        setBecauseSaved({ ...result, reference, ranked: !result.degraded });
+        setBecauseSavedState('ready');
+      } catch {
+        if (!cancelled) setBecauseSavedState('error');
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [topSavedId]);
 
   /* ── deep link: open a title straight from a shared URL ────── */
   useEffect(() => {
@@ -172,7 +212,7 @@ export default function App() {
       : 'Trending now';
 
   /* ── ask ────────────────────────────────────────────────── */
-  async function rank(requestText, pool, reference) {
+  async function rankPool(requestText, pool) {
     let intro = '';
     let picks = pool.slice(0, 10);
     let degraded = '';
@@ -205,7 +245,12 @@ export default function App() {
       degraded = err.message;
     }
 
-    setAnswer({ intro, picks, reference, degraded, ranked: !degraded });
+    return { intro, picks, degraded };
+  }
+
+  async function rank(requestText, pool, reference) {
+    const result = await rankPool(requestText, pool);
+    setAnswer({ ...result, reference, ranked: !result.degraded });
   }
 
   async function ask() {
@@ -217,7 +262,7 @@ export default function App() {
     setAnswer(null);
     setAskPool(null);
     setFollowUp('');
-    setAskStage('Pulling candidates from AniList');
+    setAskStage('Pulling candidates from the catalog');
 
     try {
       const { reference, pool } = await fetchCandidates(q);
@@ -288,6 +333,36 @@ export default function App() {
           </div>
         )}
 
+        {saved.length > 0 && becauseSavedState !== 'idle' && (
+          <section>
+            <SectionHead
+              title={`Because you saved “${displayTitle(saved[0])}”`}
+              count={becauseSaved ? `${becauseSaved.picks.length} picks` : null}
+            />
+            {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}
+            {becauseSavedState === 'error' && (
+              <Note error>Couldn’t build recommendations from your list right now.</Note>
+            )}
+            {becauseSaved && (
+              <>
+                {becauseSaved.intro && <p className="narration">{becauseSaved.intro}</p>}
+                {becauseSaved.degraded && (
+                  <Note error>
+                    <strong>Ranked without AI.</strong> {becauseSaved.degraded}
+                  </Note>
+                )}
+                <Grid
+                  items={becauseSaved.picks}
+                  ranked={becauseSaved.ranked}
+                  onOpen={setOpen}
+                  onSave={onSave}
+                  isSaved={isSaved}
+                />
+              </>
+            )}
+          </section>
+        )}
+
         {asking && <Loading>{askStage}</Loading>}
         {askError && <Note error>{askError}</Note>}
 
@@ -345,7 +420,7 @@ export default function App() {
         {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
         {gridState === 'error' && (
           <Note error>
-            Couldn’t reach AniList — {gridError}{' '}
+            Couldn’t reach the server — {gridError}{' '}
             <button className="retry-link" onClick={() => load({ genre, search, sort })}>Try again</button>
           </Note>
         )}

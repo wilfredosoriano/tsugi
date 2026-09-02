@@ -54,7 +54,7 @@ function toRow(m) {
 
 export async function rankPicks({ question, pool, apiKey, model }) {
   if (!apiKey) {
-    throw fail(503, 'GROQ_API_KEY is not set on the server. Add it to .env for local dev, or to your project environment variables when deployed.');
+    throw fail(503, "The recommendation service isn't configured on the server yet.");
   }
   if (typeof question !== 'string' || !question.trim()) {
     throw fail(400, 'Ask a question first.');
@@ -101,17 +101,17 @@ export async function rankPicks({ question, pool, apiKey, model }) {
       }),
     });
   } catch {
-    throw fail(502, "Couldn't reach Groq. Check your network and try again.");
+    throw fail(502, "Couldn't reach the recommendation service. Check your network and try again.");
   }
 
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    if (res.status === 401) throw fail(401, 'Groq rejected the API key.');
-    if (res.status === 429) throw fail(429, 'Groq rate limit hit. Wait a few seconds.');
+    if (res.status === 401) throw fail(401, 'The recommendation service rejected the request.');
+    if (res.status === 429) throw fail(429, 'The recommendation service is busy right now. Wait a few seconds and try again.');
     if (res.status === 404) {
-      throw fail(404, `Model "${effectiveModel}" is not available on this account. Check the current model list at console.groq.com and set GROQ_MODEL.`);
+      throw fail(404, `Model "${effectiveModel}" isn't available on the recommendation service. Check its current model list and update the configured model.`);
     }
-    throw fail(res.status, `Groq returned ${res.status}. ${detail.slice(0, 160)}`);
+    throw fail(res.status, `The recommendation service returned an error (${res.status}). ${detail.slice(0, 160)}`);
   }
 
   const data = await res.json();
@@ -121,7 +121,7 @@ export async function rankPicks({ question, pool, apiKey, model }) {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw fail(502, 'Groq returned something that was not valid JSON. Try asking again.');
+    throw fail(502, 'The recommendation service returned something that was not valid. Try asking again.');
   }
 
   const allowed = new Set(pool.map((m) => Number(m.id)));
