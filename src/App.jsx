@@ -281,6 +281,13 @@ export default function App() {
       <main className="wrap">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
 
+        {saved.length > 0 && (
+          <div id="saved" className="saved-rail">
+            <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
+            <Grid items={saved} onOpen={setOpen} onSave={onSave} isSaved={isSaved} horizontal />
+          </div>
+        )}
+
         {asking && <Loading>{askStage}</Loading>}
         {askError && <Note error>{askError}</Note>}
 
@@ -356,13 +363,6 @@ export default function App() {
         )}
         {gridState === 'ready' && gridItems.length === 0 && (
           <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
-        )}
-
-        {saved.length > 0 && (
-          <div id="saved">
-            <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
-            <Grid items={saved} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
-          </div>
         )}
       </main>
 

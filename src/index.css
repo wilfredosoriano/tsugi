@@ -471,6 +471,17 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 /* ── plate grid ─────────────────────────────────────────── */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px 16px; }
 
+.saved-rail { margin-bottom: 30px; }
+/* A Netflix-style horizontally scrolling row instead of the wrapping grid —
+   fixed-width cards so several fit on screen and scrolling stays smooth. */
+.grid-rail {
+  display: flex; gap: 16px; overflow-x: auto; padding: 2px 2px 10px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+}
+.grid-rail::-webkit-scrollbar { display: none; }
+.grid-rail .plate { flex: 0 0 150px; width: 150px; }
+@media (min-width: 640px) { .grid-rail .plate { flex-basis: 170px; width: 170px; } }
+
 .plate {
   position: relative; text-align: left; display: flex; flex-direction: column; gap: 9px;
   opacity: 0; transform: translateY(26px) scale(0.94);

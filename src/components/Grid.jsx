@@ -1,9 +1,9 @@
 import Plate from './Plate.jsx';
 import { SORTS } from '../lib/anilist.js';
 
-export function Grid({ items, ranked = false, onOpen, onSave, isSaved }) {
+export function Grid({ items, ranked = false, onOpen, onSave, isSaved, horizontal = false }) {
   return (
-    <div className="grid">
+    <div className={horizontal ? 'grid-rail' : 'grid'}>
       {items.map((media, i) => (
         <Plate
           key={media.id}
