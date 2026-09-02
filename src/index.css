@@ -611,13 +611,24 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .synopsis { font-size: 0.98rem; line-height: 1.6; margin: 12px 0; color: var(--text-soft); }
 .watch { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
-.watch a {
-  display: inline-block; border-radius: 999px; border: 1px solid var(--border); color: var(--text);
-  padding: 8px 15px; margin: 5px 8px 0 0; font-size: 0.8rem; font-weight: 600;
-  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+/* Flex-wrap + gap (not inline-block + margin) so an arbitrarily long list
+   of platforms wraps into neat rows instead of uneven, overflowing chips. */
+.watch-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.watch-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; border: 1px solid transparent;
+  padding: 8px 14px; font-size: 0.8rem; font-weight: 600;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
-.watch a:hover { border-color: var(--accent); background: var(--accent-wash); }
-.watch a.search-link { border-style: dashed; color: var(--text-soft); }
+.watch-link:active { transform: scale(0.96); }
+/* Confirmed, AniList-verified platforms stand out; "search this site"
+   fallbacks stay visually secondary so the list reads as prioritized,
+   not one undifferentiated wall of pills once there are many. */
+.watch-link.official { background: var(--accent-wash); color: var(--accent-strong); }
+.watch-link.official:hover { background: var(--accent-gradient); color: #fff; transform: translateY(-1px); }
+.watch-link.search { background: var(--bg-elevated-2); border-color: var(--border); color: var(--text-faint); }
+.watch-link.search:hover { border-color: var(--accent); color: var(--accent-strong); }
+.watch-link-ext { opacity: 0.55; }
 
 /* ── states ─────────────────────────────────────────────── */
 .note {

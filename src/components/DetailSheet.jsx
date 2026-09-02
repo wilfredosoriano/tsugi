@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, Check, Plus } from 'lucide-react';
+import { X, Play, Check, Plus, Search, ExternalLink } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
@@ -119,19 +119,25 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             <p className="synopsis">{synopsis || 'No synopsis on record.'}</p>
 
             <div className="watch">
-              <p className="mono" style={{ marginBottom: 6 }}>
+              <p className="mono" style={{ marginBottom: 10 }}>
                 Watch it here
               </p>
-              {links.map((l) => (
-                <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer">
-                  {l.site}
-                </a>
-              ))}
-              {searches.map((l) => (
-                <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="search-link">
-                  Search {l.site}
-                </a>
-              ))}
+              <div className="watch-links">
+                {links.map((l) => (
+                  <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="watch-link official">
+                    <Play size={12} fill="currentColor" />
+                    {l.site}
+                    <ExternalLink size={11} className="watch-link-ext" />
+                  </a>
+                ))}
+                {searches.map((l) => (
+                  <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="watch-link search">
+                    <Search size={12} />
+                    {l.site}
+                    <ExternalLink size={11} className="watch-link-ext" />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>
