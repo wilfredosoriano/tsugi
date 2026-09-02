@@ -132,11 +132,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   Search {l.site}
                 </a>
               ))}
-              {links.length === 0 && (
-                <a href={media.siteUrl} target="_blank" rel="noopener noreferrer">
-                  Check AniList for platforms
-                </a>
-              )}
             </div>
           </div>
         </div>
