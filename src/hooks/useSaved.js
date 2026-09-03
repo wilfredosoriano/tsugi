@@ -2,6 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 
 const KEY = 'tsugi:saved';
 
+/** Guards against malformed/foreign JSON crashing the grid on import. */
+function isValidSavedItem(m) {
+  return (
+    m != null &&
+    typeof m === 'object' &&
+    Number.isInteger(m.id) &&
+    m.title && typeof m.title === 'object' &&
+    (typeof m.title.romaji === 'string' || typeof m.title.english === 'string') &&
+    m.coverImage && typeof m.coverImage === 'object' &&
+    typeof m.coverImage.large === 'string'
+  );
+}
+
 /**
  * Want-to-watch list, persisted to localStorage.
  * Stores whole media objects so the list renders offline without refetching.
@@ -39,5 +52,18 @@ export function useSaved() {
     );
   }, []);
 
-  return { saved, isSaved, toggle, ready };
+  /** Unions an imported list into the current one, deduped by id — never overwrites. */
+  const merge = useCallback((items) => {
+    const incoming = Array.isArray(items) ? items.filter(isValidSavedItem) : [];
+    const known = new Set(saved.map((m) => m.id));
+    const fresh = incoming.filter((m) => !known.has(m.id));
+    if (fresh.length) setSaved((prev) => [...fresh, ...prev]);
+    return {
+      added: fresh.length,
+      skipped: incoming.length - fresh.length,
+      invalid: (Array.isArray(items) ? items.length : 0) - incoming.length,
+    };
+  }, [saved]);
+
+  return { saved, isSaved, toggle, merge, ready };
 }

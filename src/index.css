@@ -575,6 +575,29 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .sheet-save.on { background: var(--bg-elevated-2); color: var(--text); box-shadow: none; }
 .trailer-link { text-decoration: none; }
 
+/* ── list transfer (export/import, no account needed) ─────── */
+.transfer-bar { margin: 4px 0 22px; }
+.transfer-trigger { font-size: 0.85rem; padding: 9px 16px; }
+.transfer-sheet { max-width: 480px; }
+.transfer-tabs { display: flex; gap: 8px; padding: 14px 22px 0; }
+.transfer-tabs button {
+  padding: 8px 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 700;
+  background: var(--bg-elevated-2); border: 1px solid var(--border); color: var(--text-soft);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.transfer-tabs button[aria-pressed='true'] { background: var(--accent-gradient); color: #fff; border-color: transparent; }
+.transfer-body { padding: 18px 22px 22px; }
+.transfer-body textarea {
+  width: 100%; min-height: 160px; margin: 10px 0 14px; padding: 12px 14px; box-sizing: border-box;
+  border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated-2);
+  color: var(--text); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem;
+  resize: vertical;
+}
+.transfer-body textarea:focus { border-color: var(--accent); }
+.transfer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.transfer-actions .btn { font-size: 0.85rem; padding: 10px 18px; }
+.file-btn { cursor: pointer; }
+
 .related { border-top: 1px solid var(--border); padding: 18px 0; }
 .related-row {
   display: flex; gap: 12px; overflow-x: auto; padding: 12px 20px 4px; scrollbar-width: none;

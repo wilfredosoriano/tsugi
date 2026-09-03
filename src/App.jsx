@@ -3,7 +3,9 @@ import Masthead from './components/Masthead.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
+import ListTransfer from './components/ListTransfer.jsx';
 import ToastStack from './components/Toast.jsx';
+import { ArrowLeftRight } from 'lucide-react';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
@@ -58,9 +60,18 @@ export default function App() {
   const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
   const [becauseSavedState, setBecauseSavedState] = useState('idle'); // idle | loading | ready | error
   const [open, setOpen] = useState(null);
-  const { saved, isSaved, toggle, ready: savedReady } = useSaved();
+  const [transferOpen, setTransferOpen] = useState(false);
+  const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
+
+  const onImportList = useCallback((items) => {
+    const result = merge(items);
+    if (result.added > 0) {
+      pushToast(`Imported ${result.added} title${result.added === 1 ? '' : 's'}`);
+    }
+    return result;
+  }, [merge, pushToast]);
 
   const onSave = useCallback((media) => {
     const wasSaved = isSaved(media.id);
@@ -365,6 +376,14 @@ export default function App() {
       <main className="wrap">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
 
+        {savedReady && (
+          <div className="transfer-bar">
+            <button className="btn ghost transfer-trigger" onClick={() => setTransferOpen(true)}>
+              <ArrowLeftRight size={14} /> {saved.length > 0 ? 'Move my list' : 'Import a saved list'}
+            </button>
+          </div>
+        )}
+
         {saved.length > 0 && (
           <div id="saved" className="saved-rail">
             <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
@@ -488,6 +507,10 @@ export default function App() {
           onSave={onSave}
           isSaved={isSaved}
         />
+      )}
+
+      {transferOpen && (
+        <ListTransfer saved={saved} onImport={onImportList} onClose={() => setTransferOpen(false)} />
       )}
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
