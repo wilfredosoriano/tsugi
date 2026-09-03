@@ -32,6 +32,16 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [items.length]);
 
+  // Feeds the dark-mode ambient glow (see body::before in index.css) with
+  // whatever's currently showing — AniList's own precomputed dominant
+  // color, no image analysis needed. No-ops harmlessly in light mode,
+  // where that rule is hidden.
+  useEffect(() => {
+    const color = items[i]?.coverImage?.color;
+    document.documentElement.style.setProperty('--hero-glow', color || '');
+    return () => document.documentElement.style.removeProperty('--hero-glow');
+  }, [items, i]);
+
   if (!items.length) return null;
 
   const media = items[i];

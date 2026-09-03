@@ -16,7 +16,7 @@ export default function Plate({ media, rank, index = 0, caption, saved, onOpen, 
       <div className="cover-wrap">
         <button
           className="imgbox"
-          onClick={() => onOpen(media)}
+          onClick={(e) => onOpen(media, e.currentTarget.getBoundingClientRect())}
           aria-label={`Open details for ${title}`}
         >
           <img

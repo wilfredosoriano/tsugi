@@ -9,7 +9,7 @@ const ENDPOINT = 'https://graphql.anilist.co';
 const MEDIA_FIELDS = `
   id
   title { romaji english native }
-  coverImage { extraLarge large }
+  coverImage { extraLarge large color }
   bannerImage
   averageScore
   episodes

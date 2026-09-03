@@ -53,7 +53,10 @@ export async function buildOgHtml({ id, siteUrl }) {
   const description = media
     ? (cleanText(media.description).slice(0, 200) || SITE_DESCRIPTION)
     : SITE_DESCRIPTION;
-  const image = media?.coverImage?.extraLarge || media?.coverImage?.large;
+  // Falls back to the app's own logo card for a bare share (no specific
+  // title) — so pasting the plain Tsugi link anywhere still shows an image
+  // instead of just clickable text.
+  const image = media?.coverImage?.extraLarge || media?.coverImage?.large || `${siteUrl}/og-image.png`;
 
   return `<!doctype html>
 <html lang="en">
@@ -65,12 +68,12 @@ export async function buildOgHtml({ id, siteUrl }) {
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
+<meta property="og:image" content="${esc(image)}">
 <meta property="og:url" content="${esc(pageUrl)}">
-<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
-${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
+<meta name="twitter:image" content="${esc(image)}">
 <meta http-equiv="refresh" content="0; url=${esc(pageUrl)}">
 </head>
 <body>

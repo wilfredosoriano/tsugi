@@ -59,7 +59,22 @@ export default function App() {
   const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
   const [becauseSavedState, setBecauseSavedState] = useState('idle'); // idle | loading | ready | error
   const [open, setOpen] = useState(null);
+  const [openSourceRect, setOpenSourceRect] = useState(null);
   const [transferOpen, setTransferOpen] = useState(false);
+
+  // Grid cards pass the clicked cover's own rect so the detail sheet can
+  // visually grow out of it (see DetailSheet's FLIP transition); every
+  // other entry point (hero, search picks, related/season links, deep
+  // links) has no such rect and falls back to the plain pop-in.
+  const openMedia = useCallback((media, rect) => {
+    setOpenSourceRect(rect ?? null);
+    setOpen(media);
+  }, []);
+
+  const closeMedia = useCallback(() => {
+    setOpen(null);
+    setOpenSourceRect(null);
+  }, []);
   const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved();
   const { theme, toggle: toggleTheme } = useTheme();
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
@@ -166,7 +181,7 @@ export default function App() {
     const id = deepLinkId.current;
     if (!id) return;
     fetchById(Number(id))
-      .then((media) => { if (media) setOpen(media); })
+      .then((media) => { if (media) openMedia(media); })
       .catch(() => {})
       .finally(() => { deepLinkId.current = null; });
   }, []);
@@ -205,9 +220,9 @@ export default function App() {
       setSort(s.sort);
       historyOpenId.current = s.id ? Number(s.id) : null;
       if (s.id) {
-        fetchById(Number(s.id)).then((media) => { if (media) setOpen(media); }).catch(() => {});
+        fetchById(Number(s.id)).then((media) => { if (media) openMedia(media); }).catch(() => {});
       } else {
-        setOpen(null);
+        closeMedia();
       }
     };
     window.addEventListener('popstate', onPopState);
@@ -358,7 +373,7 @@ export default function App() {
         activeGenre={genre}
         onGenre={setGenre}
         onSearch={setSearch}
-        onOpenMedia={setOpen}
+        onOpenMedia={openMedia}
         theme={theme}
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
@@ -368,7 +383,7 @@ export default function App() {
       {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (
         <div className="wrap hero-wrap">
           {featured.length > 0
-            ? <Hero items={featured} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+            ? <Hero items={featured} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
             : <div className="hero skel-hero" aria-hidden="true" />}
         </div>
       )}
@@ -379,7 +394,7 @@ export default function App() {
         {saved.length > 0 && (
           <div id="saved" className="saved-rail">
             <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
-            <Grid items={saved} onOpen={setOpen} onSave={onSave} isSaved={isSaved} horizontal />
+            <Grid items={saved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal />
           </div>
         )}
 
@@ -404,7 +419,7 @@ export default function App() {
                 <Grid
                   items={becauseSaved.picks}
                   ranked={becauseSaved.ranked}
-                  onOpen={setOpen}
+                  onOpen={openMedia}
                   onSave={onSave}
                   isSaved={isSaved}
                 />
@@ -434,7 +449,7 @@ export default function App() {
             <Grid
               items={answer.picks}
               ranked={answer.ranked}
-              onOpen={setOpen}
+              onOpen={openMedia}
               onSave={onSave}
               isSaved={isSaved}
             />
@@ -477,7 +492,7 @@ export default function App() {
         {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
           <>
             <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
-              <Grid items={gridItems} onOpen={setOpen} onSave={onSave} isSaved={isSaved} />
+              <Grid items={gridItems} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
             </div>
             {hasMore && (
               <div className="more" ref={sentinelRef}>
@@ -494,10 +509,11 @@ export default function App() {
       {open && (
         <DetailSheet
           media={open}
-          onClose={() => setOpen(null)}
-          onOpenRelated={setOpen}
+          onClose={closeMedia}
+          onOpenRelated={openMedia}
           onSave={onSave}
           isSaved={isSaved}
+          sourceRect={openSourceRect}
         />
       )}
 

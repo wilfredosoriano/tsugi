@@ -1,14 +1,53 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X, Play, Check, Plus, Search, ExternalLink } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
 
-export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved }) {
+export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, sourceRect }) {
   const closeRef = useRef(null);
+  const sheetRef = useRef(null);
   const [related, setRelated] = useState(null);
   const [seasons, setSeasons] = useState(null);
+
+  // FLIP: the sheet mounts already in its natural final position, so we
+  // measure that, then paint one frame with an inline transform mapping it
+  // back onto the clicked card's rect (no transition), then release the
+  // transform with a transition enabled — the browser animates the
+  // correction, reading as the card growing into the modal rather than a
+  // modal appearing from nowhere. Skipped entirely when there's no
+  // sourceRect (hero/search/related/deep-link opens keep the plain pop-in).
+  useLayoutEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sourceRect || !sheet) return undefined;
+
+    // getBoundingClientRect reports the POST-transform box, so any
+    // transform left over from a previous run (StrictMode double-invokes
+    // this in dev) would corrupt this measurement — reset first to
+    // guarantee we're always measuring the untransformed natural rect.
+    sheet.style.transition = 'none';
+    sheet.style.transform = 'none';
+    const final = sheet.getBoundingClientRect();
+
+    const dx = (sourceRect.left + sourceRect.width / 2) - (final.left + final.width / 2);
+    const dy = (sourceRect.top + sourceRect.height / 2) - (final.top + final.height / 2);
+    const scaleX = sourceRect.width / final.width;
+    const scaleY = sourceRect.height / final.height;
+
+    sheet.style.opacity = '0.4';
+    sheet.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
+
+    sheet.getBoundingClientRect(); // force reflow so the transform above actually paints first
+
+    const raf = requestAnimationFrame(() => {
+      sheet.style.transition = 'transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 220ms ease';
+      sheet.style.transform = 'none';
+      sheet.style.opacity = '1';
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [sourceRect]);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -71,7 +110,13 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
 
   return (
     <div className="scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        ref={sheetRef}
+        className={`sheet${sourceRect ? ' flip' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <div className="sheet-head">
           <div>
             <h3 className="display">{title}</h3>
