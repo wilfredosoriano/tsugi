@@ -678,6 +678,17 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .watch-link.search:hover { border-color: var(--accent); color: var(--accent-strong); }
 .watch-link-ext { opacity: 0.55; }
 
+/* Kept, but never mixed in with the licensed platforms above — a distinct
+   warning-tinted group with its own label, so it reads as "we don't vouch
+   for this" rather than an equivalent alternative. */
+.watch-unlicensed { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.watch-unlicensed-label {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  color: var(--danger);
+}
+.watch-link.unlicensed { background: var(--danger-wash); border-color: transparent; color: var(--danger); }
+.watch-link.unlicensed:hover { border-color: var(--danger); }
+
 /* ── states ─────────────────────────────────────────────── */
 .note {
   padding: 16px 18px; border-radius: var(--radius); background: var(--bg-elevated); border: 1px solid var(--border);

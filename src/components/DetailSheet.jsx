@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, Check, Plus, Search, ExternalLink } from 'lucide-react';
+import { X, Play, Check, Plus, Search, ExternalLink, TriangleAlert } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
@@ -51,7 +51,9 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
   const studio = media.studios?.nodes?.[0]?.name;
   const links = legalLinks(media);
   const directSites = new Set(links.map((l) => l.site.toLowerCase()));
-  const searches = searchLinks(title).filter((s) => !directSites.has(s.site.toLowerCase()));
+  const otherSearches = searchLinks(title).filter((s) => !directSites.has(s.site.toLowerCase()));
+  const searches = otherSearches.filter((s) => s.licensed);
+  const unlicensedSearches = otherSearches.filter((s) => !s.licensed);
   const synopsis = cleanText(media.description);
   const saved = isSaved?.(media.id);
   const trailerUrl =
@@ -138,6 +140,23 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   </a>
                 ))}
               </div>
+
+              {unlicensedSearches.length > 0 && (
+                <div className="watch-unlicensed">
+                  <p className="mono watch-unlicensed-label">
+                    <TriangleAlert size={12} /> Not a licensed streaming platform
+                  </p>
+                  <div className="watch-links">
+                    {unlicensedSearches.map((l) => (
+                      <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="watch-link unlicensed">
+                        <Search size={12} />
+                        {l.site}
+                        <ExternalLink size={11} className="watch-link-ext" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
