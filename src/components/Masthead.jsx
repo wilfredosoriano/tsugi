@@ -184,22 +184,24 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
             <span className="kanji">次</span>
           </div>
           <p className="tagline">A reading room for deciding what you watch next.</p>
-          <button
-            className="theme-toggle"
-            onClick={onOpenTransfer}
-            aria-label={savedCount > 0 ? 'Move your saved list to another device' : 'Import a saved list from another device'}
-            title="Move list between devices"
-          >
-            <ArrowLeftRight size={16} strokeWidth={2} />
-          </button>
-          <button
-            className="theme-toggle"
-            onClick={onToggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to day edition' : 'Switch to night edition'}
-            title={theme === 'dark' ? 'Day edition' : 'Night edition'}
-          >
-            {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
-          </button>
+          <div className="header-actions">
+            <button
+              className="icon-btn"
+              onClick={onOpenTransfer}
+              aria-label={savedCount > 0 ? 'Move your saved list to another device' : 'Import a saved list from another device'}
+              title="Move list between devices"
+            >
+              <ArrowLeftRight size={16} strokeWidth={2} />
+            </button>
+            <button
+              className="icon-btn"
+              onClick={onToggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to day edition' : 'Switch to night edition'}
+              title={theme === 'dark' ? 'Day edition' : 'Night edition'}
+            >
+              {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
+            </button>
+          </div>
         </div>
 
         <div className="search-wrap" ref={wrapRef}>
