@@ -43,6 +43,9 @@ export const SEARCH_PLATFORMS = [
   // with the platforms above as if they were equivalent.
   { site: 'Anime BD', url: (q) => `https://anibd.app/?s=${encodeURIComponent(q)}`, licensed: false },
   { site: 'Anikoto TV', url: (q) => `https://anikototv.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
+  { site: 'Anix TV', url: (q) => `https://anixtv.me/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
+  { site: 'Anime SOGO', url: (q) => `https://animesogo.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
+  { site: 'Anichi', url: (q) => `https://anichi.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
 ];
 
 export function searchLinks(title) {
