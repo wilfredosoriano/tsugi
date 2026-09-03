@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, Check, Plus, Search, ExternalLink, TriangleAlert } from 'lucide-react';
+import { X, Play, Check, Plus, Search, ExternalLink } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
@@ -143,9 +143,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
 
               {unlicensedSearches.length > 0 && (
                 <div className="watch-unlicensed">
-                  <p className="mono watch-unlicensed-label">
-                    <TriangleAlert size={12} /> Not a licensed streaming platform
-                  </p>
+                  <p className="mono watch-unlicensed-label">Unofficial</p>
                   <div className="watch-links">
                     {unlicensedSearches.map((l) => (
                       <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="watch-link unlicensed">
