@@ -18,6 +18,7 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
 
   const wrapRef = useRef(null);
   const railRef = useRef(null);
+  const searchInputRef = useRef(null);
   const requestId = useRef(0);
   const debounceRef = useRef(null);
   const dragRef = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
@@ -92,6 +93,21 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // "/" jumps to search, like GitHub/Slack — skipped while already typing
+  // anywhere else, so it never hijacks a literal "/" character.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (isTyping) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {
@@ -207,6 +223,7 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
         <div className="search-wrap" ref={wrapRef}>
           <div className="searchbar">
             <input
+              ref={searchInputRef}
               type="search"
               value={term}
               onChange={(e) => { setTerm(e.target.value); setOpen(true); }}

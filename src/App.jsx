@@ -33,7 +33,7 @@ export default function App() {
   const deepLinkId = useRef(initialUrl.id);
   const historyOpenId = useRef(initialUrl.id ? Number(initialUrl.id) : null);
 
-  const [genre, setGenre] = useState(initialUrl.search ? null : initialUrl.genre);
+  const [genre, setGenre] = useState(initialUrl.genre);
   const [search, setSearch] = useState(initialUrl.search);
   const [sort, setSort] = useState(initialUrl.sort);
   const [gridItems, setGridItems] = useState([]);
@@ -175,7 +175,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    else if (genre) params.set('genre', genre);
+    if (genre) params.set('genre', genre);
     if (sort !== 'TRENDING_DESC') params.set('sort', sort);
     if (open) params.set('id', open.id);
     else if (deepLinkId.current) params.set('id', deepLinkId.current);
@@ -201,7 +201,7 @@ export default function App() {
     const onPopState = () => {
       const s = readUrlState();
       setSearch(s.search);
-      setGenre(s.search ? null : s.genre);
+      setGenre(s.genre);
       setSort(s.sort);
       historyOpenId.current = s.id ? Number(s.id) : null;
       if (s.id) {
@@ -253,7 +253,7 @@ export default function App() {
   const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
 
   const gridTitle = search
-    ? `Results for “${search}”`
+    ? genre ? `“${search}” in ${genre}` : `Results for “${search}”`
     : genre
       ? `Top ${genre}`
       : 'Trending now';
@@ -356,8 +356,8 @@ export default function App() {
     <>
       <Masthead
         activeGenre={genre}
-        onGenre={(g) => { setGenre(g); setSearch(''); }}
-        onSearch={(term) => { setSearch(term); setGenre(null); }}
+        onGenre={setGenre}
+        onSearch={setSearch}
         onOpenMedia={setOpen}
         theme={theme}
         onToggleTheme={toggleTheme}

@@ -16,6 +16,22 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
     return () => clearInterval(id);
   }, [paused, items.length]);
 
+  // Left/right arrow keys step through the carousel — skipped while typing
+  // anywhere (arrow keys move the text cursor there instead).
+  useEffect(() => {
+    if (items.length < 2) return undefined;
+    const onKey = (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const target = e.target;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (isTyping) return;
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      setI((current) => ((current + dir) % items.length + items.length) % items.length);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [items.length]);
+
   if (!items.length) return null;
 
   const media = items[i];
