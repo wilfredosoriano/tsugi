@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, ArrowLeftRight } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
 
-export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount }) {
+export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
@@ -184,6 +184,14 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
             <span className="kanji">次</span>
           </div>
           <p className="tagline">A reading room for deciding what you watch next.</p>
+          <button
+            className="theme-toggle"
+            onClick={onOpenTransfer}
+            aria-label={savedCount > 0 ? 'Move your saved list to another device' : 'Import a saved list from another device'}
+            title="Move list between devices"
+          >
+            <ArrowLeftRight size={16} strokeWidth={2} />
+          </button>
           <button
             className="theme-toggle"
             onClick={onToggleTheme}

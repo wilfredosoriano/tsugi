@@ -1,5 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X, Copy, Check, Download, Upload } from 'lucide-react';
+import { isValidSavedItem } from '../hooks/useSaved.js';
+import { displayTitle } from '../lib/format.js';
+
+/** Non-interactive poster strip — just a visual preview, no open/save actions. */
+function PreviewRow({ items }) {
+  if (!items.length) return null;
+  return (
+    <div className="transfer-preview">
+      {items.map((m) => (
+        <div className="transfer-preview-item" key={m.id} title={displayTitle(m)}>
+          <img src={m.coverImage.large} alt="" loading="lazy" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Moves the want-to-watch list between devices without any account or
@@ -14,6 +30,18 @@ export default function ListTransfer({ saved, onImport, onClose }) {
   const [copied, setCopied] = useState(false);
 
   const exportText = JSON.stringify(saved, null, 2);
+
+  // Both sides already carry full media objects (cover art, title, etc.),
+  // not just ids — an export from this app is self-contained — so the
+  // preview is pure client-side rendering, no AniList fetch involved.
+  const importPreview = useMemo(() => {
+    try {
+      const parsed = JSON.parse(importText);
+      return Array.isArray(parsed) ? parsed.filter(isValidSavedItem) : [];
+    } catch {
+      return [];
+    }
+  }, [importText]);
 
   const copy = async () => {
     try {
@@ -73,6 +101,7 @@ export default function ListTransfer({ saved, onImport, onClose }) {
                 ? 'Copy this, or download it as a file — then paste or upload it on your other device.'
                 : 'Nothing saved yet on this device.'}
             </p>
+            <PreviewRow items={saved} />
             <textarea readOnly value={exportText} onFocus={(e) => e.target.select()} />
             <div className="transfer-actions">
               <button className="btn" onClick={copy} disabled={saved.length === 0}>
@@ -91,13 +120,18 @@ export default function ListTransfer({ saved, onImport, onClose }) {
               onChange={(e) => { setImportText(e.target.value); setImportResult(null); }}
               placeholder="Paste your exported list here…"
             />
+            {importText.trim() !== '' && (
+              importPreview.length > 0
+                ? <PreviewRow items={importPreview} />
+                : <p className="num">No valid titles found in that text yet.</p>
+            )}
             <div className="transfer-actions">
               <label className="btn ghost file-btn">
                 <Upload size={15} /> Choose file
                 <input type="file" accept="application/json" onChange={onFile} hidden />
               </label>
-              <button className="btn" onClick={runImport} disabled={!importText.trim()}>
-                Import
+              <button className="btn" onClick={runImport} disabled={!importPreview.length}>
+                {importPreview.length > 0 ? `Import ${importPreview.length} title${importPreview.length === 1 ? '' : 's'}` : 'Import'}
               </button>
             </div>
             {importResult?.error && <p className="note err">{importResult.error}</p>}

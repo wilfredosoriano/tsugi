@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 const KEY = 'tsugi:saved';
 
 /** Guards against malformed/foreign JSON crashing the grid on import. */
-function isValidSavedItem(m) {
+export function isValidSavedItem(m) {
   return (
     m != null &&
     typeof m === 'object' &&

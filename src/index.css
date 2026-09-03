@@ -576,8 +576,6 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .trailer-link { text-decoration: none; }
 
 /* ── list transfer (export/import, no account needed) ─────── */
-.transfer-bar { margin: 4px 0 22px; }
-.transfer-trigger { font-size: 0.85rem; padding: 9px 16px; }
 .transfer-sheet { max-width: 480px; }
 .transfer-tabs { display: flex; gap: 8px; padding: 14px 22px 0; }
 .transfer-tabs button {
@@ -587,6 +585,16 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .transfer-tabs button[aria-pressed='true'] { background: var(--accent-gradient); color: #fff; border-color: transparent; }
 .transfer-body { padding: 18px 22px 22px; }
+.transfer-preview {
+  display: flex; gap: 8px; overflow-x: auto; margin: 10px 0;
+  padding: 2px 2px 6px; scrollbar-width: none;
+}
+.transfer-preview::-webkit-scrollbar { display: none; }
+.transfer-preview-item {
+  flex: 0 0 52px; width: 52px; aspect-ratio: 2 / 3; border-radius: var(--radius-sm);
+  overflow: hidden; background: var(--bg-elevated-2); box-shadow: var(--shadow);
+}
+.transfer-preview-item img { width: 100%; height: 100%; object-fit: cover; }
 .transfer-body textarea {
   width: 100%; min-height: 160px; margin: 10px 0 14px; padding: 12px 14px; box-sizing: border-box;
   border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated-2);

@@ -5,7 +5,6 @@ import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ListTransfer from './components/ListTransfer.jsx';
 import ToastStack from './components/Toast.jsx';
-import { ArrowLeftRight } from 'lucide-react';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
@@ -363,6 +362,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
+        onOpenTransfer={() => setTransferOpen(true)}
       />
 
       {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (
@@ -375,14 +375,6 @@ export default function App() {
 
       <main className="wrap">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
-
-        {savedReady && (
-          <div className="transfer-bar">
-            <button className="btn ghost transfer-trigger" onClick={() => setTransferOpen(true)}>
-              <ArrowLeftRight size={14} /> {saved.length > 0 ? 'Move my list' : 'Import a saved list'}
-            </button>
-          </div>
-        )}
 
         {saved.length > 0 && (
           <div id="saved" className="saved-rail">
