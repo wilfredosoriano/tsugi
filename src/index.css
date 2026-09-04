@@ -94,6 +94,15 @@ body::before {
   transition: opacity 1s var(--ease), background-color 1.4s var(--ease);
 }
 :root[data-theme='light'] body::before { opacity: 0; }
+/* `left: 6%` is 6% of the raw viewport — fine on mobile, where content
+   fills the whole width, but on a desktop window wider than .wrap's
+   1280px content column, that same 6% drifts into the empty margin
+   beside the (centered) content instead of tracking where the hero
+   actually sits. Above that width, anchor to the content column's own
+   left edge instead of the viewport's. */
+@media (min-width: 1280px) {
+  body::before { left: calc(50% - 563px); }
+}
 
 ::selection { background: var(--accent); color: #fff; }
 a { color: var(--accent-strong); text-decoration: none; }
