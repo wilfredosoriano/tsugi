@@ -38,6 +38,17 @@ export const GENRES = [
  */
 export const DEMOGRAPHICS = ['Shounen', 'Shoujo', 'Seinen', 'Josei'];
 
+/**
+ * Popular tag-only genres with no equivalent in AniList's fixed `genre`
+ * enum — same "needs `tag` not `genre`" situation as DEMOGRAPHICS above,
+ * just not audience-related. Picked from the most common tags across
+ * AniList's most popular titles.
+ */
+export const TAG_GENRES = [
+  'Isekai', 'Reincarnation', 'Super Power', 'Time Loop', 'Post-Apocalyptic',
+  'Urban Fantasy', 'Magic', 'School', 'Coming of Age', 'Survival', 'Female Harem', 'Military', 'Martial Arts',
+];
+
 async function gql(query, variables = {}) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
@@ -65,7 +76,7 @@ export const SORTS = [
 
 /** Trending, genre/demographic-filtered, or search results for the main grid. Paginated. */
 export async function fetchGrid({ genre = null, search = null, sort = null, page = 1 } = {}) {
-  const filterField = genre && DEMOGRAPHICS.includes(genre) ? 'tag' : 'genre';
+  const filterField = genre && (DEMOGRAPHICS.includes(genre) || TAG_GENRES.includes(genre)) ? 'tag' : 'genre';
   const query = `query ($filterValue: String, $search: String, $sort: [MediaSort], $page: Int) {
     Page(page: $page, perPage: 24) {
       pageInfo { hasNextPage }
