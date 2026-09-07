@@ -639,6 +639,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    row tracks, and ends up inflating one of them into a large gap rather
    than sizing anything to actual content. */
 .airing-desktop { display: none; }
+.airing-block + .airing-block { margin-top: 28px; }
 .airing-list-vertical { display: flex; flex-direction: column; gap: 10px; }
 .airing-list-vertical .airing-item { width: 100%; flex: none; }
 

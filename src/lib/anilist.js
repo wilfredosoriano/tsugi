@@ -364,6 +364,29 @@ export async function fetchAiringSoon(limit = 15) {
     .sort((a, b) => a.airingAt - b.airingAt);
 }
 
+/**
+ * Live next-episode airing info for a specific set of media (e.g. a
+ * user's own Watching-status list), for the "Your shows airing soon"
+ * rail — distinct from fetchAiringSoon's popularity-curated pool, since a
+ * personally-tracked show may not be popular enough to land in that one.
+ * Ignores titles with nothing currently scheduled (finished, hiatus, etc).
+ */
+export async function fetchAiringForIds(ids) {
+  if (!ids.length) return [];
+  const data = await gql(
+    `query ($ids: [Int]) {
+      Page(page: 1, perPage: ${ids.length}) {
+        media(id_in: $ids) { ${MEDIA_FIELDS} }
+      }
+    }`,
+    { ids }
+  );
+  return data.Page.media
+    .filter((m) => m.nextAiringEpisode)
+    .map((m) => ({ media: m, episode: m.nextAiringEpisode.episode, airingAt: m.nextAiringEpisode.airingAt }))
+    .sort((a, b) => a.airingAt - b.airingAt);
+}
+
 /** Minimal shape sent to the ranking endpoint — no covers, no descriptions. */
 export function toPromptRows(pool) {
   return pool.map((m) => ({

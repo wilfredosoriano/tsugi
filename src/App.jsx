@@ -7,7 +7,7 @@ import ListTransfer from './components/ListTransfer.jsx';
 import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringSoon, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringSoon, fetchAiringForIds, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
@@ -63,6 +63,9 @@ export default function App() {
 
   const [airingSoon, setAiringSoon] = useState([]);
   const [airingSoonState, setAiringSoonState] = useState('loading'); // loading | ready | error
+
+  const [myAiringSoon, setMyAiringSoon] = useState([]);
+  const [myAiringSoonState, setMyAiringSoonState] = useState('idle'); // idle | loading | ready | error
 
   const [becauseSavedSeedId, setBecauseSavedSeedId] = useState(null);
   const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
@@ -140,6 +143,37 @@ export default function App() {
       })
       .catch(() => setAiringSoonState('error'));
   }, []);
+
+  /* ── "Your shows airing soon": same idea as the rail above, but scoped
+     to your own Watching-status list instead of the catalog's popular
+     titles — a personally-tracked show may not be popular enough to show
+     up there. Keyed off a sorted id string (not `saved` itself) so
+     toggling something unrelated (a different item's status, importing a
+     list) doesn't refetch unless the actual Watching set changed. ────── */
+  const watchingKey = saved
+    .filter((m) => m.watchStatus === 'watching')
+    .map((m) => m.id)
+    .sort((a, b) => a - b)
+    .join(',');
+
+  useEffect(() => {
+    if (!savedReady) return;
+    if (!watchingKey) {
+      setMyAiringSoon([]);
+      setMyAiringSoonState('idle');
+      return;
+    }
+    let cancelled = false;
+    setMyAiringSoonState('loading');
+    fetchAiringForIds(watchingKey.split(',').map(Number))
+      .then((items) => {
+        if (cancelled) return;
+        setMyAiringSoon(items);
+        setMyAiringSoonState('ready');
+      })
+      .catch(() => { if (!cancelled) setMyAiringSoonState('error'); });
+    return () => { cancelled = true; };
+  }, [watchingKey, savedReady]);
 
   /* ── "Because you saved X": a personalized row seeded by a title from
      want-to-watch, run through the same candidate-pool + AI-ranking
@@ -456,12 +490,22 @@ export default function App() {
       )}
 
       <main className="wrap">
-        {airingSoonState === 'ready' && airingSoon.length > 0 && (
+        {(myAiringSoonState === 'ready' && myAiringSoon.length > 0) || (airingSoonState === 'ready' && airingSoon.length > 0) ? (
           <aside className="airing-desktop">
-            <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
-            <AiringRail items={airingSoon} onOpen={openMedia} vertical />
+            {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
+              <div className="airing-block">
+                <SectionHead title="Your shows airing soon" count={`${myAiringSoon.length}`} />
+                <AiringRail items={myAiringSoon} onOpen={openMedia} vertical />
+              </div>
+            )}
+            {airingSoonState === 'ready' && airingSoon.length > 0 && (
+              <div className="airing-block">
+                <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
+                <AiringRail items={airingSoon} onOpen={openMedia} vertical />
+              </div>
+            )}
           </aside>
-        )}
+        ) : null}
 
         <div className="main-col">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
@@ -490,6 +534,13 @@ export default function App() {
               <Note>Nothing with that status yet.</Note>
             )}
           </div>
+        )}
+
+        {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
+          <section className="airing-mobile">
+            <SectionHead title="Your shows airing soon" count={`${myAiringSoon.length}`} />
+            <AiringRail items={myAiringSoon} onOpen={openMedia} />
+          </section>
         )}
 
         {airingSoonState === 'ready' && airingSoon.length > 0 && (
