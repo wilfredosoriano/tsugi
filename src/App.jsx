@@ -10,6 +10,7 @@ import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFe
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
+import { useAuth } from './hooks/useAuth.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
@@ -75,7 +76,8 @@ export default function App() {
     setOpen(null);
     setOpenSourceRect(null);
   }, []);
-  const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved();
+  const { user, signIn, signOut, enabled: syncEnabled } = useAuth();
+  const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved(user);
   const { theme, toggle: toggleTheme } = useTheme();
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
 
@@ -378,6 +380,10 @@ export default function App() {
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
         onOpenTransfer={() => setTransferOpen(true)}
+        user={user}
+        onSignIn={signIn}
+        onSignOut={signOut}
+        syncEnabled={syncEnabled}
       />
 
       {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (

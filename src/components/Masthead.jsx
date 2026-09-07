@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon, ArrowLeftRight } from 'lucide-react';
+import { Sun, Moon, ArrowLeftRight, LogIn } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, TAG_GENRES, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
 
-export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer }) {
+export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, user, onSignIn, onSignOut, syncEnabled }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
@@ -217,6 +217,29 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
             >
               {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
             </button>
+            {syncEnabled && (
+              user ? (
+                <button
+                  className="icon-btn avatar-btn"
+                  onClick={onSignOut}
+                  aria-label={`Synced as ${user.displayName || user.email} — click to sign out`}
+                  title={`Synced as ${user.displayName || user.email}`}
+                >
+                  {user.photoURL
+                    ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+                    : <span className="avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
+                </button>
+              ) : (
+                <button
+                  className="icon-btn"
+                  onClick={onSignIn}
+                  aria-label="Sign in with Google to sync your list across devices"
+                  title="Sync across devices"
+                >
+                  <LogIn size={16} strokeWidth={2} />
+                </button>
+              )
+            )}
           </div>
         </div>
 

@@ -194,6 +194,10 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .icon-btn:hover { background: var(--accent-gradient); color: #fff; transform: rotate(-14deg) scale(1.06); }
 .icon-btn:active { transform: rotate(-14deg) scale(0.94); }
+.icon-btn.avatar-btn { padding: 0; overflow: hidden; }
+.icon-btn.avatar-btn img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.icon-btn.avatar-btn:hover, .icon-btn.avatar-btn:active { transform: scale(1.06); }
+.avatar-fallback { font-weight: 700; font-size: 0.95rem; }
 
 .search-wrap { position: relative; margin-bottom: 14px; }
 .searchbar {

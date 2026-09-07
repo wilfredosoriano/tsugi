@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Each signed-in user can only read/write their own synced want-to-watch
+// list, stored at users/{their uid}. Paste this into Firebase Console >
+// Firestore Database > Rules (or deploy via the Firebase CLI).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
