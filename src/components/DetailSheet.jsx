@@ -162,7 +162,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   aria-label={`Remove ${title} from want-to-watch`}
                   title="Remove from list"
                 >
-                  <X size={13} />
+                  Remove
                 </button>
               </div>
             )}
