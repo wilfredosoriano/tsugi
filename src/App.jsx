@@ -35,6 +35,9 @@ export default function App() {
   const initialUrl = useRef(readUrlState()).current;
   const deepLinkId = useRef(initialUrl.id);
   const historyOpenId = useRef(initialUrl.id ? Number(initialUrl.id) : null);
+  const gridSectionRef = useRef(null);
+  const answerSectionRef = useRef(null);
+  const prevFilter = useRef({ genre: initialUrl.genre, search: initialUrl.search });
 
   const [genre, setGenre] = useState(initialUrl.genre);
   const [search, setSearch] = useState(initialUrl.search);
@@ -269,6 +272,29 @@ export default function App() {
     load({ genre, search, sort });
   }, [genre, search, sort, load]);
 
+  /* Changing genre/search moves the results into a section that's often
+     well below the fold now (want-to-watch, airing soon, etc. all sit
+     above it) — scroll it into view so picking a new filter is visibly
+     acted on, instead of looking like nothing happened. Compares against
+     the previous value (rather than a "skip the first run" flag) so it
+     doesn't misfire on mount under StrictMode's double-invoked effects,
+     and doesn't yank the page on a deep-linked ?genre=/?search= URL. */
+  useEffect(() => {
+    const prev = prevFilter.current;
+    const changed = prev.genre !== genre || prev.search !== search;
+    prevFilter.current = { genre, search };
+    if (changed) {
+      gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [genre, search]);
+
+  /* Same idea for AI recommendation results: they land in a section below
+     the ask panel, easy to miss once the page has several rails/sections
+     above it. */
+  useEffect(() => {
+    if (answer) answerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [answer]);
+
   const loadMore = useCallback(async () => {
     setLoadingMore(true);
     try {
@@ -484,7 +510,7 @@ export default function App() {
         {askError && <Note error>{askError}</Note>}
 
         {answer && (
-          <section>
+          <section ref={answerSectionRef} className="grid-scroll-anchor">
             <SectionHead
               title={answer.ranked ? 'Recommended for you' : 'Closest in the catalog'}
               count={
@@ -525,6 +551,7 @@ export default function App() {
           </section>
         )}
 
+        <div ref={gridSectionRef} className="grid-scroll-anchor" />
         <SectionHead
           title={gridTitle}
           count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
