@@ -14,15 +14,15 @@ function describeAuthError(err) {
  * want-to-watch list (see useSaved). Everything stays fully usable signed
  * out — this hook just tracks whether someone has opted in.
  *
- * Identity comes from Google Identity Services (see GoogleSignInButton),
- * not Firebase's own signInWithPopup/signInWithRedirect — both of those
- * route through the separate `firebaseapp.com` auth domain, and modern
- * browsers' anti-bounce-tracking storage protections (Safari ITP,
- * Chrome's DIPS) silently break that round trip: no error, but the
- * storage carrying the sign-in result back gets wiped. GIS issues a
- * credential directly in this page instead, so there's no cross-site
- * redirect to break; handleGoogleCredential below just exchanges that
- * credential for a normal Firebase session.
+ * Identity comes from Google Identity Services' OAuth2 token client (see
+ * GoogleSignInButton), not Firebase's own signInWithPopup/signInWithRedirect
+ * — both of those route through the separate `firebaseapp.com` auth
+ * domain, and modern browsers' anti-bounce-tracking storage protections
+ * (Safari ITP, Chrome's DIPS) silently break that round trip: no error,
+ * but the storage carrying the sign-in result back gets wiped. GIS's
+ * token popup instead communicates back via postMessage, which isn't
+ * subject to that; handleGoogleCredential below just exchanges the
+ * resulting access token for a normal Firebase session.
  */
 export function useAuth(onError) {
   const [user, setUser] = useState(null);
@@ -36,8 +36,8 @@ export function useAuth(onError) {
     });
   }, []);
 
-  const handleGoogleCredential = useCallback((idToken) => {
-    signInWithCredential(auth, GoogleAuthProvider.credential(idToken)).catch(
+  const handleGoogleCredential = useCallback((accessToken) => {
+    signInWithCredential(auth, GoogleAuthProvider.credential(null, accessToken)).catch(
       (err) => onError?.(describeAuthError(err))
     );
   }, [onError]);
