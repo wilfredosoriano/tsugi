@@ -194,7 +194,13 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .icon-btn:hover { background: var(--accent-gradient); color: #fff; transform: rotate(-14deg) scale(1.06); }
 .icon-btn:active { transform: rotate(-14deg) scale(0.94); }
-.google-signin-btn { flex-shrink: 0; display: flex; align-items: center; height: 40px; }
+/* Google's button only ever renders its light "outline" style, so it's
+   framed in a small white card rather than left to clash with dark mode. */
+.google-signin-btn-wrap {
+  display: flex; align-items: center; flex-shrink: 0;
+  padding: 3px; border-radius: 999px; background: #fff; box-shadow: var(--shadow);
+}
+.google-signin-btn { display: flex; align-items: center; height: 40px; }
 
 .account { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .account-avatar {

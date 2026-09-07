@@ -230,7 +230,7 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
                   </button>
                 </div>
               ) : (
-                <GoogleSignInButton onCredential={onGoogleCredential} theme={theme} />
+                <GoogleSignInButton onCredential={onGoogleCredential} />
               )
             )}
           </div>
