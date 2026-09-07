@@ -12,6 +12,7 @@ const MEDIA_FIELDS = `
   coverImage { extraLarge large color }
   bannerImage
   averageScore
+  popularity
   episodes
   seasonYear
   format
@@ -325,32 +326,42 @@ export async function fetchFeaturedPool() {
  * without opening every ongoing title one by one. `airingSchedules` has
  * no per-media isAdult filter of its own, so that's applied client-side,
  * along with deduping (a title can appear once per upcoming episode).
+ *
+ * Sorting purely by airing time surfaces whatever happens to air in the
+ * next hour regardless of how obscure it is, which reads as "random
+ * anime" rather than "airing soon" the way other anime sites show it.
+ * Instead this pulls a wider week-long window, keeps only the most
+ * popular titles in it, and only then sorts that subset chronologically.
  */
 export async function fetchAiringSoon(limit = 15) {
   const now = Math.floor(Date.now() / 1000);
+  const soon = now + 60 * 60 * 24 * 7;
   const data = await gql(
-    `query ($now: Int, $perPage: Int) {
+    `query ($now: Int, $soon: Int, $perPage: Int) {
       Page(page: 1, perPage: $perPage) {
-        airingSchedules(airingAt_greater: $now, sort: TIME) {
+        airingSchedules(airingAt_greater: $now, airingAt_lesser: $soon, sort: TIME) {
           airingAt
           episode
           media { ${MEDIA_FIELDS} }
         }
       }
     }`,
-    { now, perPage: limit * 3 }
+    { now, soon, perPage: 100 }
   );
 
   const seen = new Set();
-  const items = [];
+  const candidates = [];
   for (const s of data.Page.airingSchedules) {
     const m = s.media;
     if (!hasCover(m) || m.isAdult || seen.has(m.id)) continue;
     seen.add(m.id);
-    items.push({ media: m, episode: s.episode, airingAt: s.airingAt });
-    if (items.length >= limit) break;
+    candidates.push({ media: m, episode: s.episode, airingAt: s.airingAt });
   }
-  return items;
+
+  return candidates
+    .sort((a, b) => (b.media.popularity || 0) - (a.media.popularity || 0))
+    .slice(0, limit)
+    .sort((a, b) => a.airingAt - b.airingAt);
 }
 
 /** Minimal shape sent to the ranking endpoint — no covers, no descriptions. */
