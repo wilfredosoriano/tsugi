@@ -463,6 +463,7 @@ export default function App() {
           </aside>
         )}
 
+        <div className="main-col">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
 
         {saved.length > 0 && (
@@ -605,6 +606,7 @@ export default function App() {
         {gridState === 'ready' && gridItems.length === 0 && (
           <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
         )}
+        </div>
       </main>
 
       {open && (

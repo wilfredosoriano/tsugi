@@ -628,7 +628,16 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    here, this vertical list in the sidebar) and switched with display:none
    rather than reordered, since the two need different internal layouts
    (horizontal-scroll rows vs a stacked list), not just a different
-   position for the same markup. */
+   position for the same markup.
+
+   main.wrap holds exactly two grid items — .airing-desktop and the
+   .main-col wrapper around everything else — each sized by its own
+   content in a single auto row. Letting .airing-desktop instead span
+   multiple auto-sized rows (grid-row: 1 / -1) alongside .main-col's many
+   individually-placed children is a classic CSS Grid trap: the grid has
+   to reconcile the tall spanning item against several separate shorter
+   row tracks, and ends up inflating one of them into a large gap rather
+   than sizing anything to actual content. */
 .airing-desktop { display: none; }
 .airing-list-vertical { display: flex; flex-direction: column; gap: 10px; }
 .airing-list-vertical .airing-item { width: 100%; flex: none; }
@@ -637,12 +646,14 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   main.wrap {
     display: grid; grid-template-columns: 280px 1fr; align-items: start; gap: 28px;
   }
-  main.wrap > *:not(.airing-desktop) { grid-column: 2; }
+  .main-col { grid-column: 2; min-width: 0; }
   .airing-mobile { display: none; }
   .airing-desktop {
-    display: block; grid-column: 1; grid-row: 1 / -1;
+    display: block; grid-column: 1;
     position: sticky; top: 215px; max-height: calc(100vh - 230px); overflow-y: auto;
+    scrollbar-width: none;
   }
+  .airing-desktop::-webkit-scrollbar { display: none; }
 }
 
 .plate {
