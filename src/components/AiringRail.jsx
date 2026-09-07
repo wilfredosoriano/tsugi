@@ -3,13 +3,15 @@ import { displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 
 /**
- * Homepage rail of episodes airing soon — a flat list of {media, episode,
- * airingAt} (from fetchAiringSoon), not bare media objects, so it gets its
- * own compact card instead of reusing Plate/Grid.
+ * Rail of episodes airing soon — a flat list of {media, episode, airingAt}
+ * (from fetchAiringSoon), not bare media objects, so it gets its own
+ * compact card instead of reusing Plate/Grid. `vertical` switches from the
+ * horizontally-scrolling mobile rail to a stacked sidebar list (same cards
+ * either way) — used for the desktop left-column placement.
  */
-export default function AiringRail({ items, onOpen }) {
+export default function AiringRail({ items, onOpen, vertical = false }) {
   return (
-    <div className="airing-scroll-rail">
+    <div className={vertical ? 'airing-list-vertical' : 'airing-scroll-rail'}>
       {items.map(({ media, episode, airingAt }) => (
         <button
           key={media.id}

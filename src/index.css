@@ -623,6 +623,28 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
+/* Desktop/tablet: "Airing soon" becomes a persistent left sidebar instead
+   of a rail sitting between other sections — rendered twice (mobile rail
+   here, this vertical list in the sidebar) and switched with display:none
+   rather than reordered, since the two need different internal layouts
+   (horizontal-scroll rows vs a stacked list), not just a different
+   position for the same markup. */
+.airing-desktop { display: none; }
+.airing-list-vertical { display: flex; flex-direction: column; gap: 10px; }
+.airing-list-vertical .airing-item { width: 100%; flex: none; }
+
+@media (min-width: 900px) {
+  main.wrap {
+    display: grid; grid-template-columns: 280px 1fr; align-items: start; gap: 28px;
+  }
+  main.wrap > *:not(.airing-desktop) { grid-column: 2; }
+  .airing-mobile { display: none; }
+  .airing-desktop {
+    display: block; grid-column: 1; grid-row: 1 / -1;
+    position: sticky; top: 215px; max-height: calc(100vh - 230px); overflow-y: auto;
+  }
+}
+
 .plate {
   position: relative; text-align: left; display: flex; flex-direction: column; gap: 9px;
   opacity: 0; transform: translateY(26px) scale(0.94);

@@ -456,6 +456,13 @@ export default function App() {
       )}
 
       <main className="wrap">
+        {airingSoonState === 'ready' && airingSoon.length > 0 && (
+          <aside className="airing-desktop">
+            <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
+            <AiringRail items={airingSoon} onOpen={openMedia} vertical />
+          </aside>
+        )}
+
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
 
         {saved.length > 0 && (
@@ -485,7 +492,7 @@ export default function App() {
         )}
 
         {airingSoonState === 'ready' && airingSoon.length > 0 && (
-          <section>
+          <section className="airing-mobile">
             <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
             <AiringRail items={airingSoon} onOpen={openMedia} />
           </section>
