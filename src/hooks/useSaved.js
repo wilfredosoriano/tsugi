@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 const KEY = 'tsugi:saved';
@@ -18,105 +18,105 @@ export function isValidSavedItem(m) {
 }
 
 /**
- * Want-to-watch list. Always persisted to localStorage (so the app works
- * fully with no login), and additionally mirrored to Firestore while
- * `user` is signed in, so it follows them to other devices.
+ * Want-to-watch list. Two entirely separate lists, never merged: a local
+ * one (localStorage), used whenever signed out, and a cloud one
+ * (Firestore, under the signed-in user's own uid), used whenever signed
+ * in. Signing in shows exactly what's already saved to that account
+ * (empty on a first sign-in); signing out reveals the local list again,
+ * untouched. Whichever one is active also mirrors live across other
+ * signed-in devices via a Firestore listener.
  *
  * Stores whole media objects so the list renders offline without refetching.
  */
 export function useSaved(user) {
-  const [saved, setSaved] = useState([]);
-  const [ready, setReady] = useState(false);
-  const savedRef = useRef(saved);
-  savedRef.current = saved;
+  const [localSaved, setLocalSaved] = useState([]);
+  const [localReady, setLocalReady] = useState(false);
+  const [cloudSaved, setCloudSaved] = useState([]);
+  const [cloudReady, setCloudReady] = useState(false);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setSaved(JSON.parse(raw));
+      if (raw) setLocalSaved(JSON.parse(raw));
     } catch {
       // corrupt or unavailable storage — start clean rather than crash
     }
-    setReady(true);
+    setLocalReady(true);
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!localReady) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(saved));
+      localStorage.setItem(KEY, JSON.stringify(localSaved));
     } catch {
       // quota or private mode — the list stays in memory for this session
     }
-  }, [saved, ready]);
+  }, [localSaved, localReady]);
 
-  // While signed in, mirror this list with the user's Firestore doc. On
-  // first sign-in (or a fresh device), this unions whatever's already
-  // local into the cloud copy rather than letting either side clobber the
-  // other. After that, a live listener picks up changes made from other
-  // signed-in devices; `hasPendingWrites` skips the instant echo of our
-  // own writes so it doesn't fight with the optimistic local update below.
   useEffect(() => {
-    if (!ready || !user || !db) return undefined;
-    const ref = doc(db, 'users', user.uid);
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const snap = await getDoc(ref);
-        const cloud = snap.exists() ? (snap.data().saved || []) : [];
-        const known = new Set(cloud.map((m) => m.id));
-        const merged = [...cloud, ...savedRef.current.filter((m) => !known.has(m.id))];
-        if (!cancelled) await setDoc(ref, { saved: merged, updatedAt: Date.now() });
-      } catch {
-        // offline or blocked — local list still works, will retry next sign-in
-      }
-    })();
-
-    const unsubscribe = onSnapshot(ref, (snap) => {
-      if (snap.metadata.hasPendingWrites) return;
-      const data = snap.data();
-      if (data) setSaved(data.saved || []);
-    });
-
-    return () => { cancelled = true; unsubscribe(); };
-  }, [ready, user?.uid]);
-
-  const pushCloud = useCallback((next) => {
-    if (user && db) {
-      setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+    if (!user || !db) {
+      setCloudSaved([]);
+      setCloudReady(false);
+      return undefined;
     }
-  }, [user]);
+    setCloudReady(false);
+    const ref = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(
+      ref,
+      (snap) => {
+        setCloudSaved(snap.data()?.saved || []);
+        setCloudReady(true);
+      },
+      () => setCloudReady(true) // offline/blocked — show empty rather than hang
+    );
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  const saved = user ? cloudSaved : localSaved;
+  const ready = user ? cloudReady : localReady;
 
   const isSaved = useCallback((id) => saved.some((m) => m.id === id), [saved]);
 
   const toggle = useCallback((media) => {
-    setSaved((prev) => {
-      const next = prev.some((m) => m.id === media.id)
-        ? prev.filter((m) => m.id !== media.id)
-        : [media, ...prev];
-      pushCloud(next);
-      return next;
-    });
-  }, [pushCloud]);
+    if (user && db) {
+      setCloudSaved((prev) => {
+        const next = prev.some((m) => m.id === media.id)
+          ? prev.filter((m) => m.id !== media.id)
+          : [media, ...prev];
+        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+        return next;
+      });
+    } else {
+      setLocalSaved((prev) =>
+        prev.some((m) => m.id === media.id)
+          ? prev.filter((m) => m.id !== media.id)
+          : [media, ...prev]
+      );
+    }
+  }, [user]);
 
-  /** Unions an imported list into the current one, deduped by id — never overwrites. */
+  /** Unions an imported list into the current (active) one, deduped by id — never overwrites. */
   const merge = useCallback((items) => {
     const incoming = Array.isArray(items) ? items.filter(isValidSavedItem) : [];
     const known = new Set(saved.map((m) => m.id));
     const fresh = incoming.filter((m) => !known.has(m.id));
     if (fresh.length) {
-      setSaved((prev) => {
-        const next = [...fresh, ...prev];
-        pushCloud(next);
-        return next;
-      });
+      if (user && db) {
+        setCloudSaved((prev) => {
+          const next = [...fresh, ...prev];
+          setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+          return next;
+        });
+      } else {
+        setLocalSaved((prev) => [...fresh, ...prev]);
+      }
     }
     return {
       added: fresh.length,
       skipped: incoming.length - fresh.length,
       invalid: (Array.isArray(items) ? items.length : 0) - incoming.length,
     };
-  }, [saved, pushCloud]);
+  }, [saved, user]);
 
   return { saved, isSaved, toggle, merge, ready };
 }
