@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X, Play, Check, Plus, Search, ExternalLink, Clock } from 'lucide-react';
+import { X, Play, Plus, Search, ExternalLink, Clock } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
+import { WATCH_STATUSES } from '../lib/watchStatus.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
 
-export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, sourceRect }) {
+export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, watchStatus, onSetStatus, sourceRect }) {
   const closeRef = useRef(null);
   const sheetRef = useRef(null);
   const [related, setRelated] = useState(null);
@@ -139,10 +140,31 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                 <span className="num">{stars.value} · {stars.raw}/100</span>
               </div>
             )}
-            {onSave && (
-              <button className={`btn ghost sheet-save${saved ? ' on' : ''}`} onClick={() => onSave(media)}>
-                {saved ? <><Check size={15} /> Saved</> : <><Plus size={15} /> Want to watch</>}
+            {onSave && !saved && (
+              <button className="btn ghost sheet-save" onClick={() => onSave(media)}>
+                <Plus size={15} /> Want to watch
               </button>
+            )}
+            {onSave && saved && (
+              <div className="status-picker">
+                {WATCH_STATUSES.map((s) => (
+                  <button
+                    key={s.value}
+                    className={`status-pill${watchStatus === s.value ? ' active' : ''}`}
+                    onClick={() => onSetStatus(media.id, s.value)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+                <button
+                  className="status-remove"
+                  onClick={() => onSave(media)}
+                  aria-label={`Remove ${title} from want-to-watch`}
+                  title="Remove from list"
+                >
+                  <X size={13} />
+                </button>
+              </div>
             )}
             {trailerUrl && (
               <a

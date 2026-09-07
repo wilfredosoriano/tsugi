@@ -16,6 +16,7 @@ import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
 import { displayTitle } from './lib/format.js';
+import { WATCH_STATUSES } from './lib/watchStatus.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
 
@@ -82,7 +83,8 @@ export default function App() {
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
   const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
-  const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved(user);
+  const { saved, isSaved, toggle, setWatchStatus, merge, ready: savedReady } = useSaved(user);
+  const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
 
   const onImportList = useCallback((items) => {
@@ -293,6 +295,8 @@ export default function App() {
 
   const becauseSavedReference = becauseSaved?.reference ?? saved.find((m) => m.id === becauseSavedSeedId) ?? null;
 
+  const visibleSaved = statusFilter === 'all' ? saved : saved.filter((m) => m.watchStatus === statusFilter);
+
   /* ── ask ────────────────────────────────────────────────── */
   async function rankPool(requestText, pool) {
     let intro = '';
@@ -415,8 +419,27 @@ export default function App() {
 
         {saved.length > 0 && (
           <div id="saved" className="saved-rail">
-            <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
-            <Grid items={saved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal />
+            <SectionHead title="Your want-to-watch" count={`${visibleSaved.length} of ${saved.length}`}>
+              <div className="status-filter">
+                <button className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>
+                  All
+                </button>
+                {WATCH_STATUSES.map((s) => (
+                  <button
+                    key={s.value}
+                    className={statusFilter === s.value ? 'active' : ''}
+                    onClick={() => setStatusFilter(s.value)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </SectionHead>
+            {visibleSaved.length > 0 ? (
+              <Grid items={visibleSaved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal />
+            ) : (
+              <Note>Nothing with that status yet.</Note>
+            )}
           </div>
         )}
 
@@ -542,6 +565,8 @@ export default function App() {
           onOpenRelated={openMedia}
           onSave={onSave}
           isSaved={isSaved}
+          watchStatus={saved.find((m) => m.id === open.id)?.watchStatus}
+          onSetStatus={setWatchStatus}
           sourceRect={openSourceRect}
         />
       )}
