@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Clock } from 'lucide-react';
 import { starParts, displayTitle, cleanText } from '../lib/format.js';
+import { formatAiring } from '../lib/airing.js';
 import { useInView } from '../hooks/useInView.js';
 
 /** One anime as a poster card. `rank` is only passed for ranked AI results. */
@@ -34,6 +35,13 @@ export default function Plate({ media, rank, index = 0, caption, saved, onOpen, 
         </button>
 
         {rank != null && <span className="rank">{String(rank + 1).padStart(2, '0')}</span>}
+
+        {media.nextAiringEpisode && (
+          <span className="next-ep">
+            <Clock size={10} strokeWidth={2.5} />
+            Ep {media.nextAiringEpisode.episode} · {formatAiring(media.nextAiringEpisode.airingAt)}
+          </span>
+        )}
 
         <button
           className={`save${saved ? ' on' : ''}`}

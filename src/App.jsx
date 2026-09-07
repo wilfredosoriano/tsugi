@@ -5,8 +5,9 @@ import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ListTransfer from './components/ListTransfer.jsx';
 import ToastStack from './components/Toast.jsx';
+import AiringRail from './components/AiringRail.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringSoon, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
@@ -56,6 +57,9 @@ export default function App() {
   const [featured, setFeatured] = useState([]);
   const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
 
+  const [airingSoon, setAiringSoon] = useState([]);
+  const [airingSoonState, setAiringSoonState] = useState('loading'); // loading | ready | error
+
   const [becauseSavedSeedId, setBecauseSavedSeedId] = useState(null);
   const [becauseSaved, setBecauseSaved] = useState(null); // { intro, picks, reference, degraded, ranked }
   const [becauseSavedState, setBecauseSavedState] = useState('idle'); // idle | loading | ready | error
@@ -104,6 +108,18 @@ export default function App() {
         setFeaturedState('ready');
       })
       .catch(() => setFeaturedState('error'));
+  }, []);
+
+  /* ── homepage "Airing soon": upcoming episodes across ongoing (or
+     about-to-premiere) anime, so users don't have to check each one
+     individually ─────────────────────────────────────────────── */
+  useEffect(() => {
+    fetchAiringSoon(15)
+      .then((items) => {
+        setAiringSoon(items);
+        setAiringSoonState('ready');
+      })
+      .catch(() => setAiringSoonState('error'));
   }, []);
 
   /* ── "Because you saved X": a personalized row seeded by a title from
@@ -402,6 +418,13 @@ export default function App() {
             <SectionHead title="Your want-to-watch" count={`${saved.length} saved`} />
             <Grid items={saved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal />
           </div>
+        )}
+
+        {airingSoonState === 'ready' && airingSoon.length > 0 && (
+          <section>
+            <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
+            <AiringRail items={airingSoon} onOpen={openMedia} />
+          </section>
         )}
 
         {becauseSavedReference && becauseSavedState !== 'idle' && (

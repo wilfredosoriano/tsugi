@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Plus, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Plus, Check, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { starParts, cleanText, displayTitle } from '../lib/format.js';
+import { formatAiring } from '../lib/airing.js';
 
 const INTERVAL_MS = 7000;
 
@@ -73,6 +74,12 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
           {stars && <span className="stars">{stars.glyphs}</span>}
           {media.seasonYear && <span className="num">{media.seasonYear}</span>}
           {media.episodes && <span className="num">{media.episodes} episodes</span>}
+          {media.nextAiringEpisode && (
+            <span className="airing-badge">
+              <Clock size={12} strokeWidth={2.5} />
+              Ep {media.nextAiringEpisode.episode} · {formatAiring(media.nextAiringEpisode.airingAt)}
+            </span>
+          )}
         </div>
         {synopsis && (
           <p className="hero-synopsis">

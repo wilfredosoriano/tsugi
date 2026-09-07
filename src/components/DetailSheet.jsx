@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X, Play, Check, Plus, Search, ExternalLink } from 'lucide-react';
+import { X, Play, Check, Plus, Search, ExternalLink, Clock } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
+import { formatAiring } from '../lib/airing.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
@@ -163,6 +164,12 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             </div>
 
             <p className="num">{facts.join(' · ')}</p>
+            {media.nextAiringEpisode && (
+              <p className="airing-badge sheet-airing">
+                <Clock size={13} strokeWidth={2.5} />
+                Episode {media.nextAiringEpisode.episode} airs {formatAiring(media.nextAiringEpisode.airingAt)}
+              </p>
+            )}
             <p className="synopsis">{synopsis || 'No synopsis on record.'}</p>
 
             <div className="watch">

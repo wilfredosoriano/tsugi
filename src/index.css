@@ -400,6 +400,12 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .hero-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .hero-meta .stars { color: var(--accent-strong); }
 .hero-meta .num { color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; }
+.airing-badge {
+  display: flex; align-items: center; gap: 5px; width: fit-content;
+  background: var(--accent-wash); color: var(--accent-strong);
+  font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+}
+.sheet-airing { margin: 10px 0; }
 .hero-synopsis {
   color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.5;
   max-width: 54ch; margin-bottom: 18px;
@@ -586,6 +592,23 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .grid-rail .plate { flex: 0 0 150px; width: 150px; }
 @media (min-width: 640px) { .grid-rail .plate { flex-basis: 170px; width: 170px; } }
 
+.airing-scroll-rail {
+  display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 10px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+}
+.airing-scroll-rail::-webkit-scrollbar { display: none; }
+.airing-item {
+  flex: 0 0 220px; width: 220px; display: flex; gap: 10px; text-align: left;
+  padding: 8px; border-radius: var(--radius); background: var(--bg-elevated); border: 1px solid var(--border);
+  transition: transform var(--dur-2) var(--ease-bounce), box-shadow var(--dur-2) var(--ease);
+}
+.airing-item:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.airing-item img { width: 52px; height: 74px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
+.airing-item h4 {
+  font-size: 0.85rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
 .plate {
   position: relative; text-align: left; display: flex; flex-direction: column; gap: 9px;
   opacity: 0; transform: translateY(26px) scale(0.94);
@@ -614,6 +637,13 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   background: rgba(10, 10, 15, 0.72); backdrop-filter: blur(4px); color: #fff;
   font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em;
   padding: 3px 9px; border-radius: 999px;
+}
+.plate .next-ep {
+  position: absolute; bottom: 8px; left: 8px; z-index: 2;
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(10, 10, 15, 0.72); backdrop-filter: blur(4px); color: #fff;
+  font-weight: 700; font-size: 0.68rem; letter-spacing: 0.01em;
+  padding: 3px 8px; border-radius: 999px;
 }
 .plate .hover-note {
   position: absolute; inset: auto 0 0 0; padding: 30px 11px 11px; z-index: 1;

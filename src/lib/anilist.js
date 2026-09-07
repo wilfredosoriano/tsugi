@@ -16,12 +16,14 @@ const MEDIA_FIELDS = `
   seasonYear
   format
   status
+  isAdult
   genres
   siteUrl
   description(asHtml: false)
   studios(isMain: true) { nodes { name } }
   externalLinks { site url }
   trailer { id site }
+  nextAiringEpisode { airingAt episode }
 `;
 
 export const GENRES = [
@@ -315,6 +317,40 @@ export async function fetchFeaturedPool() {
     }`
   );
   return data.Page.media.filter((m) => hasCover(m) && m.bannerImage);
+}
+
+/**
+ * Episodes airing soon, across ongoing (or about-to-premiere) anime, for
+ * the homepage "Airing soon" rail — so users can see what's about to drop
+ * without opening every ongoing title one by one. `airingSchedules` has
+ * no per-media isAdult filter of its own, so that's applied client-side,
+ * along with deduping (a title can appear once per upcoming episode).
+ */
+export async function fetchAiringSoon(limit = 15) {
+  const now = Math.floor(Date.now() / 1000);
+  const data = await gql(
+    `query ($now: Int, $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        airingSchedules(airingAt_greater: $now, sort: TIME) {
+          airingAt
+          episode
+          media { ${MEDIA_FIELDS} }
+        }
+      }
+    }`,
+    { now, perPage: limit * 3 }
+  );
+
+  const seen = new Set();
+  const items = [];
+  for (const s of data.Page.airingSchedules) {
+    const m = s.media;
+    if (!hasCover(m) || m.isAdult || seen.has(m.id)) continue;
+    seen.add(m.id);
+    items.push({ media: m, episode: s.episode, airingAt: s.airingAt });
+    if (items.length >= limit) break;
+  }
+  return items;
 }
 
 /** Minimal shape sent to the ranking endpoint — no covers, no descriptions. */
