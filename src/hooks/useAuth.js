@@ -16,7 +16,13 @@ import { auth, googleProvider, firebaseEnabled } from '../lib/firebase.js';
  * a clean error. The redirect flow doesn't depend on that cross-window
  * storage access at all.
  */
-export function useAuth() {
+function describeAuthError(err) {
+  if (err?.code === 'auth/unauthorized-domain') return "Sign-in isn't enabled for this address yet.";
+  if (err?.code === 'auth/network-request-failed') return "Couldn't reach the sign-in service — check your connection.";
+  return 'Sign-in failed. Please try again.';
+}
+
+export function useAuth(onError) {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!firebaseEnabled);
 
@@ -24,7 +30,7 @@ export function useAuth() {
     if (!firebaseEnabled) return undefined;
     // Resolves the sign-in after signInWithRedirect below sends the user
     // back here; harmless no-op on any load that isn't that return trip.
-    getRedirectResult(auth).catch(() => {});
+    getRedirectResult(auth).catch((err) => onError?.(describeAuthError(err)));
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthReady(true);
@@ -33,12 +39,12 @@ export function useAuth() {
 
   const signIn = () => {
     if (!firebaseEnabled) return;
-    signInWithRedirect(auth, googleProvider).catch(() => {});
+    signInWithRedirect(auth, googleProvider).catch((err) => onError?.(describeAuthError(err)));
   };
 
   const signOut = () => {
     if (!firebaseEnabled) return;
-    firebaseSignOut(auth).catch(() => {});
+    firebaseSignOut(auth).catch((err) => onError?.(describeAuthError(err)));
   };
 
   return { user, authReady, signIn, signOut, enabled: firebaseEnabled };

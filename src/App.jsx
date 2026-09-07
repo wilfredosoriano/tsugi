@@ -76,10 +76,10 @@ export default function App() {
     setOpen(null);
     setOpenSourceRect(null);
   }, []);
-  const { user, signIn, signOut, enabled: syncEnabled } = useAuth();
+  const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
+  const { user, signIn, signOut, enabled: syncEnabled } = useAuth(pushToast);
   const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved(user);
   const { theme, toggle: toggleTheme } = useTheme();
-  const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
 
   const onImportList = useCallback((items) => {
     const result = merge(items);

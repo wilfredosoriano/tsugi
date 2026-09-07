@@ -194,10 +194,27 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .icon-btn:hover { background: var(--accent-gradient); color: #fff; transform: rotate(-14deg) scale(1.06); }
 .icon-btn:active { transform: rotate(-14deg) scale(0.94); }
-.icon-btn.avatar-btn { padding: 0; overflow: hidden; }
-.icon-btn.avatar-btn img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.icon-btn.avatar-btn:hover, .icon-btn.avatar-btn:active { transform: scale(1.06); }
-.avatar-fallback { font-weight: 700; font-size: 0.95rem; }
+.google-btn {
+  display: flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 16px 0 14px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-size: 0.85rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+  transition: background var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-bounce), box-shadow var(--dur-2) var(--ease);
+}
+.google-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.google-btn:active { transform: translateY(0); }
+
+.account { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.account-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-gradient); color: #fff; font-weight: 700; font-size: 0.9rem;
+}
+.account-name {
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.85rem; font-weight: 600; color: var(--text-soft);
+}
+@media (max-width: 640px) { .account-name { display: none; } }
 
 .search-wrap { position: relative; margin-bottom: 14px; }
 .searchbar {
