@@ -221,7 +221,10 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 0.85rem; font-weight: 600; color: var(--text-soft);
 }
-@media (max-width: 640px) { .account-name { display: none; } }
+@media (max-width: 640px) {
+  .account-name { display: none; }
+  .account-trigger { padding: 4px; }
+}
 
 .account-menu {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
