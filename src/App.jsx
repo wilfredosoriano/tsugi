@@ -77,7 +77,7 @@ export default function App() {
     setOpenSourceRect(null);
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
-  const { user, signIn, signOut, enabled: syncEnabled } = useAuth(pushToast);
+  const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
   const { saved, isSaved, toggle, merge, ready: savedReady } = useSaved(user);
   const { theme, toggle: toggleTheme } = useTheme();
 
@@ -381,7 +381,7 @@ export default function App() {
         savedCount={saved.length}
         onOpenTransfer={() => setTransferOpen(true)}
         user={user}
-        onSignIn={signIn}
+        onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
         syncEnabled={syncEnabled}
       />

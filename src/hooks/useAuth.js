@@ -1,51 +1,57 @@
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, googleProvider, firebaseEnabled } from '../lib/firebase.js';
+import { useCallback, useEffect, useState } from 'react';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
+import { auth, firebaseEnabled } from '../lib/firebase.js';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+function describeAuthError(err) {
+  if (err?.code === 'auth/network-request-failed') return "Couldn't reach the sign-in service — check your connection.";
+  return 'Sign-in failed. Please try again.';
+}
 
 /**
  * Optional Google sign-in, used only to unlock cross-device sync of the
  * want-to-watch list (see useSaved). Everything stays fully usable signed
  * out — this hook just tracks whether someone has opted in.
  *
- * Uses a full-page redirect rather than a popup: the popup flow relies on
- * syncing pending sign-in state between the opener and the popup through
- * IndexedDB, which browsers that partition third-party storage (Safari
- * ITP, incognito, some Chrome versions) block whenever authDomain
- * (*.firebaseapp.com) differs from the site's own domain — the exact
- * setup here — causing an internal Firebase assertion failure instead of
- * a clean error. The redirect flow doesn't depend on that cross-window
- * storage access at all.
+ * Identity comes from Google Identity Services (see GoogleSignInButton),
+ * not Firebase's own signInWithPopup/signInWithRedirect — both of those
+ * route through the separate `firebaseapp.com` auth domain, and modern
+ * browsers' anti-bounce-tracking storage protections (Safari ITP,
+ * Chrome's DIPS) silently break that round trip: no error, but the
+ * storage carrying the sign-in result back gets wiped. GIS issues a
+ * credential directly in this page instead, so there's no cross-site
+ * redirect to break; handleGoogleCredential below just exchanges that
+ * credential for a normal Firebase session.
  */
-function describeAuthError(err) {
-  if (err?.code === 'auth/unauthorized-domain') return "Sign-in isn't enabled for this address yet.";
-  if (err?.code === 'auth/network-request-failed') return "Couldn't reach the sign-in service — check your connection.";
-  return 'Sign-in failed. Please try again.';
-}
-
 export function useAuth(onError) {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!firebaseEnabled);
 
   useEffect(() => {
     if (!firebaseEnabled) return undefined;
-    // Resolves the sign-in after signInWithRedirect below sends the user
-    // back here; harmless no-op on any load that isn't that return trip.
-    getRedirectResult(auth).catch((err) => onError?.(describeAuthError(err)));
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthReady(true);
     });
   }, []);
 
-  const signIn = () => {
-    if (!firebaseEnabled) return;
-    signInWithRedirect(auth, googleProvider).catch((err) => onError?.(describeAuthError(err)));
-  };
+  const handleGoogleCredential = useCallback((idToken) => {
+    signInWithCredential(auth, GoogleAuthProvider.credential(idToken)).catch(
+      (err) => onError?.(describeAuthError(err))
+    );
+  }, [onError]);
 
-  const signOut = () => {
+  const signOut = useCallback(() => {
     if (!firebaseEnabled) return;
     firebaseSignOut(auth).catch((err) => onError?.(describeAuthError(err)));
-  };
+  }, [onError]);
 
-  return { user, authReady, signIn, signOut, enabled: firebaseEnabled };
+  return {
+    user,
+    authReady,
+    signOut,
+    handleGoogleCredential,
+    enabled: firebaseEnabled && Boolean(GOOGLE_CLIENT_ID),
+  };
 }
