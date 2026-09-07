@@ -26,6 +26,8 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
   const [dragging, setDragging] = useState(false);
   const pillRefs = useRef({});
   const [indicator, setIndicator] = useState(null); // { left, top, width, height }
+  const accountRef = useRef(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   // Slides/resizes a shared pill behind the active button instead of each
   // button instantly swapping its own background — measured off the real
@@ -114,10 +116,18 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
   useEffect(() => {
     const onOutside = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (accountRef.current && !accountRef.current.contains(e.target)) setAccountMenuOpen(false);
     };
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
   }, []);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setAccountMenuOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [accountMenuOpen]);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
@@ -220,14 +230,32 @@ export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, 
             </button>
             {syncEnabled && (
               user ? (
-                <div className="account" title={`Synced as ${user.displayName || user.email}`}>
-                  {user.photoURL
-                    ? <img className="account-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />
-                    : <span className="account-avatar avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
-                  <span className="account-name">{user.displayName || user.email}</span>
-                  <button className="icon-btn" onClick={onSignOut} aria-label="Log out" title="Log out">
-                    <LogOut size={16} strokeWidth={2} />
+                <div className="account" ref={accountRef}>
+                  <button
+                    className="account-trigger"
+                    onClick={() => setAccountMenuOpen((v) => !v)}
+                    aria-haspopup="true"
+                    aria-expanded={accountMenuOpen}
+                    aria-label={`Synced as ${user.displayName || user.email} — open account menu`}
+                    title={`Synced as ${user.displayName || user.email}`}
+                  >
+                    {user.photoURL
+                      ? <img className="account-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+                      : <span className="account-avatar avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
+                    <span className="account-name">{user.displayName || user.email}</span>
                   </button>
+                  {accountMenuOpen && (
+                    <div className="account-menu" role="menu">
+                      <p className="account-menu-email">{user.email}</p>
+                      <button
+                        className="account-menu-signout"
+                        role="menuitem"
+                        onClick={() => { setAccountMenuOpen(false); onSignOut(); }}
+                      >
+                        <LogOut size={15} strokeWidth={2} /> Log out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <GoogleSignInButton onCredential={onGoogleCredential} />

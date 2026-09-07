@@ -204,7 +204,14 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .google-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 .google-btn:active { transform: translateY(0); }
 
-.account { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.account { position: relative; flex-shrink: 0; }
+.account-trigger {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 4px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  transition: background var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-bounce);
+}
+.account-trigger:hover { transform: translateY(-1px); }
 .account-avatar {
   width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
   display: flex; align-items: center; justify-content: center;
@@ -215,6 +222,27 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   font-size: 0.85rem; font-weight: 600; color: var(--text-soft);
 }
 @media (max-width: 640px) { .account-name { display: none; } }
+
+.account-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
+  min-width: 200px; padding: 10px; border-radius: var(--radius);
+  background: var(--bg-elevated); border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  animation: menu-in var(--dur-2) var(--ease);
+}
+.account-menu-email {
+  padding: 4px 8px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--border);
+  font-size: 0.8rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.account-menu-signout {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px;
+  border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;
+  transition: background var(--dur-1) var(--ease);
+}
+.account-menu-signout:hover { background: var(--danger-wash); color: var(--danger); }
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .search-wrap { position: relative; margin-bottom: 14px; }
 .searchbar {
