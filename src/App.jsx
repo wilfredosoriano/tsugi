@@ -104,6 +104,20 @@ export default function App() {
     pushToast(wasSaved ? `Removed “${displayTitle(media)}”` : `Saved “${displayTitle(media)}” to watch`);
   }, [isSaved, toggle, pushToast]);
 
+  // Search and genre browsing are kept mutually exclusive rather than
+  // combinable — picking a genre clears any active search, and searching
+  // clears any active genre, so the grid is always driven by exactly one
+  // of the two instead of a "X in Genre" combination.
+  const onGenre = useCallback((g) => {
+    setGenre(g);
+    setSearch('');
+  }, []);
+
+  const onSearch = useCallback((q) => {
+    setSearch(q);
+    setGenre(null);
+  }, []);
+
   /* ── homepage hero: a handful of picks that hold steady all day
      and rotate to a different set tomorrow ──────────────────── */
   useEffect(() => {
@@ -314,7 +328,7 @@ export default function App() {
   const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
 
   const gridTitle = search
-    ? genre ? `“${search}” in ${genre}` : `Results for “${search}”`
+    ? `Results for “${search}”`
     : genre
       ? `Top ${genre}`
       : 'Trending now';
@@ -419,8 +433,9 @@ export default function App() {
     <>
       <Masthead
         activeGenre={genre}
-        onGenre={setGenre}
-        onSearch={setSearch}
+        search={search}
+        onGenre={onGenre}
+        onSearch={onSearch}
         onOpenMedia={openMedia}
         theme={theme}
         onToggleTheme={toggleTheme}

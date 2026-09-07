@@ -7,9 +7,16 @@ import GoogleSignInButton from './GoogleSignInButton.jsx';
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
 
-export default function Masthead({ activeGenre, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, user, onGoogleCredential, onSignOut, syncEnabled }) {
+export default function Masthead({ activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, user, onGoogleCredential, onSignOut, syncEnabled }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
+
+  // Picking a genre clears the active search (see App.jsx) — mirror that
+  // here so the box itself empties too, instead of leaving stale text
+  // that no longer matches what's on screen.
+  useEffect(() => {
+    if (!search) setTerm('');
+  }, [search]);
 
   const [suggestions, setSuggestions] = useState([]);
   const [sugState, setSugState] = useState('idle'); // idle | loading | ready | error
