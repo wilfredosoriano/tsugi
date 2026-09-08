@@ -185,6 +185,25 @@ export async function fetchRecommendations(id) {
 }
 
 /**
+ * Per-episode titles/thumbnails, sourced from official streaming providers'
+ * own metadata (AniList just aggregates it) — so each episode's `url` goes
+ * straight to that provider's official episode page, not a search link.
+ * Coverage varies by title: recent/popular simulcasts tend to be complete,
+ * older or less mainstream titles often have partial or no data at all.
+ */
+export async function fetchEpisodes(id) {
+  const data = await gql(
+    `query ($id: Int) {
+      Media(id: $id) {
+        streamingEpisodes { title thumbnail url site }
+      }
+    }`,
+    { id }
+  );
+  return data.Media.streamingEpisodes || [];
+}
+
+/**
  * Pull the title a question refers to ("similar to Black Clover" → Black Clover)
  * and confirm it actually exists in the catalog.
  */
