@@ -4,7 +4,6 @@ import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
-import { fetchEpisodesByMalId } from '../lib/jikan.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
 
@@ -15,7 +14,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
   const sheetRef = useRef(null);
   const [related, setRelated] = useState(null);
   const [seasons, setSeasons] = useState(null);
-  const [episodes, setEpisodes] = useState(null);
 
   // FLIP: the sheet mounts already in its natural final position, so we
   // measure that, then paint one frame with an inline transform mapping it
@@ -90,16 +88,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
       .catch(() => { if (live) setSeasons([]); });
     return () => { live = false; };
   }, [media.id]);
-
-  useEffect(() => {
-    let live = true;
-    setEpisodes(null);
-    if (!media.idMal) { setEpisodes([]); return undefined; }
-    fetchEpisodesByMalId(media.idMal)
-      .then((list) => { if (live) setEpisodes(list); })
-      .catch(() => { if (live) setEpisodes([]); });
-    return () => { live = false; };
-  }, [media.idMal]);
 
   const title = displayTitle(media);
   const stars = starParts(media.averageScore);
@@ -251,29 +239,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             </div>
           </div>
         </div>
-
-        {episodes !== null && episodes.length > 0 && (
-          <div className="episodes">
-            <p className="mono" style={{ padding: '0 20px' }}>Episodes</p>
-            <div className="episode-list">
-              {episodes.map((ep) => (
-                <div key={ep.number} className="episode-item">
-                  <span className="episode-item-num">{ep.number}</span>
-                  <span className="episode-item-info">
-                    <span className="episode-item-title">{ep.title || `Episode ${ep.number}`}</span>
-                    {ep.aired && (
-                      <span className="episode-item-meta">
-                        {new Date(ep.aired).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </span>
-                    )}
-                  </span>
-                  {ep.filler && <span className="episode-item-tag">Filler</span>}
-                  {ep.recap && <span className="episode-item-tag">Recap</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {seasons !== null && seasons.length > 0 && (
           <div className="related">
