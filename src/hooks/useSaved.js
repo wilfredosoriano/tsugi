@@ -117,7 +117,7 @@ export function useSaved(user) {
         const next = prev.some((m) => m.id === media.id)
           ? prev.filter((m) => m.id !== media.id)
           : [{ ...media, watchStatus: DEFAULT_WATCH_STATUS }, ...prev];
-        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }, { merge: true }).catch(() => {});
         return next;
       });
     } else {
@@ -147,7 +147,7 @@ export function useSaved(user) {
           });
         }
         const next = apply(prev);
-        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }, { merge: true }).catch(() => {});
         return next;
       });
     } else {
@@ -175,7 +175,7 @@ export function useSaved(user) {
       if (user && db) {
         setCloudSaved((prev) => {
           const next = [...fresh, ...prev];
-          setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
+          setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }, { merge: true }).catch(() => {});
           return next;
         });
       } else {
