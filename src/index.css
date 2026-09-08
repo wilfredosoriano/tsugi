@@ -422,7 +422,9 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .history-body { padding: 18px 22px 22px; max-height: 70vh; overflow-y: auto; }
 .history-year { margin-bottom: 22px; }
 .history-year:last-child { margin-bottom: 0; }
-.history-year > .mono { margin-bottom: 10px; }
+.history-year-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.history-year-head > .mono { margin-bottom: 0; }
+.history-share-btn { font-size: 0.78rem; padding: 6px 12px; flex-shrink: 0; }
 .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
 .history-item { text-align: left; }
 .history-item img {
@@ -845,6 +847,20 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .transfer-body textarea:focus { border-color: var(--accent); }
 .transfer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .transfer-actions .btn { font-size: 0.85rem; padding: 10px 18px; }
+
+/* ── wrapped recap card (shareable year-in-review image) ───── */
+.wrapped-sheet { max-width: 420px; }
+.wrapped-body { padding: 18px 22px 22px; }
+.wrapped-preview {
+  aspect-ratio: 9 / 16; border-radius: var(--radius); overflow: hidden;
+  background: var(--bg-elevated-2); margin-bottom: 14px; box-shadow: var(--shadow-lg);
+}
+.wrapped-preview img { width: 100%; height: 100%; object-fit: cover; }
+.wrapped-loading {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint); font-size: 0.85rem; font-weight: 600;
+}
+.wrapped-body .transfer-actions { justify-content: center; }
 .file-btn { cursor: pointer; }
 
 .related { border-top: 1px solid var(--border); padding: 18px 0; }
