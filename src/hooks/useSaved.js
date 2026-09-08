@@ -4,6 +4,7 @@ import { db } from '../lib/firebase.js';
 import { DEFAULT_WATCH_STATUS } from '../lib/watchStatus.js';
 
 const KEY = 'tsugi:saved';
+const COMPLETIONS_KEY = 'tsugi:completions';
 
 /** Guards against malformed/foreign JSON crashing the grid on import. */
 export function isValidSavedItem(m) {
@@ -35,6 +36,13 @@ function withDefaultStatus(items) {
  * Each item carries its own watchStatus (planning/watching/completed),
  * defaulting to planning when first saved.
  *
+ * `completions` is a { year: count } tally of titles marked Completed —
+ * tracked separately from the list itself (same local/cloud split) so
+ * it keeps counting toward "titles watched this year / all-time" even
+ * after a title is later removed from the list, matching the "how many
+ * have I watched" feeling rather than "how many are currently marked
+ * done."
+ *
  * Stores whole media objects so the list renders offline without refetching.
  */
 export function useSaved(user) {
@@ -43,10 +51,15 @@ export function useSaved(user) {
   const [cloudSaved, setCloudSaved] = useState([]);
   const [cloudReady, setCloudReady] = useState(false);
 
+  const [localCompletions, setLocalCompletions] = useState({});
+  const [cloudCompletions, setCloudCompletions] = useState({});
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setLocalSaved(withDefaultStatus(JSON.parse(raw)));
+      const rawCompletions = localStorage.getItem(COMPLETIONS_KEY);
+      if (rawCompletions) setLocalCompletions(JSON.parse(rawCompletions));
     } catch {
       // corrupt or unavailable storage — start clean rather than crash
     }
@@ -63,8 +76,18 @@ export function useSaved(user) {
   }, [localSaved, localReady]);
 
   useEffect(() => {
+    if (!localReady) return;
+    try {
+      localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(localCompletions));
+    } catch {
+      // quota or private mode — the tally stays in memory for this session
+    }
+  }, [localCompletions, localReady]);
+
+  useEffect(() => {
     if (!user || !db) {
       setCloudSaved([]);
+      setCloudCompletions({});
       setCloudReady(false);
       return undefined;
     }
@@ -74,6 +97,7 @@ export function useSaved(user) {
       ref,
       (snap) => {
         setCloudSaved(withDefaultStatus(snap.data()?.saved || []));
+        setCloudCompletions(snap.data()?.completions || {});
         setCloudReady(true);
       },
       () => setCloudReady(true) // offline/blocked — show empty rather than hang
@@ -83,6 +107,7 @@ export function useSaved(user) {
 
   const saved = user ? cloudSaved : localSaved;
   const ready = user ? cloudReady : localReady;
+  const completions = user ? cloudCompletions : localCompletions;
 
   const isSaved = useCallback((id) => saved.some((m) => m.id === id), [saved]);
 
@@ -106,14 +131,31 @@ export function useSaved(user) {
 
   const setWatchStatus = useCallback((id, watchStatus) => {
     const apply = (prev) => prev.map((m) => (m.id === id ? { ...m, watchStatus } : m));
+    const wasCompleted = (prev) => prev.find((m) => m.id === id)?.watchStatus === 'completed';
+    const bumpCompletions = watchStatus === 'completed';
+
     if (user && db) {
       setCloudSaved((prev) => {
+        if (bumpCompletions && !wasCompleted(prev)) {
+          const year = String(new Date().getFullYear());
+          setCloudCompletions((prevCompletions) => {
+            const nextCompletions = { ...prevCompletions, [year]: (prevCompletions[year] || 0) + 1 };
+            setDoc(doc(db, 'users', user.uid), { completions: nextCompletions }, { merge: true }).catch(() => {});
+            return nextCompletions;
+          });
+        }
         const next = apply(prev);
         setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }).catch(() => {});
         return next;
       });
     } else {
-      setLocalSaved(apply);
+      setLocalSaved((prev) => {
+        if (bumpCompletions && !wasCompleted(prev)) {
+          const year = String(new Date().getFullYear());
+          setLocalCompletions((prevCompletions) => ({ ...prevCompletions, [year]: (prevCompletions[year] || 0) + 1 }));
+        }
+        return apply(prev);
+      });
     }
   }, [user]);
 
@@ -140,5 +182,5 @@ export function useSaved(user) {
     };
   }, [saved, user]);
 
-  return { saved, isSaved, toggle, setWatchStatus, merge, ready };
+  return { saved, isSaved, toggle, setWatchStatus, merge, ready, completions };
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Trophy } from 'lucide-react';
 import Masthead from './components/Masthead.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
@@ -89,7 +90,7 @@ export default function App() {
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
   const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
-  const { saved, isSaved, toggle, setWatchStatus, merge, ready: savedReady } = useSaved(user);
+  const { saved, isSaved, toggle, setWatchStatus, merge, ready: savedReady, completions } = useSaved(user);
   const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
 
@@ -371,6 +372,10 @@ export default function App() {
 
   const visibleSaved = statusFilter === 'all' ? saved : saved.filter((m) => m.watchStatus === statusFilter);
 
+  const currentYear = String(new Date().getFullYear());
+  const completedThisYear = completions[currentYear] || 0;
+  const completedAllTime = Object.values(completions).reduce((sum, n) => sum + n, 0);
+
   /* ── ask ────────────────────────────────────────────────── */
   async function rankPool(requestText, pool) {
     let intro = '';
@@ -509,6 +514,14 @@ export default function App() {
 
         <div className="main-col">
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
+
+        {completedAllTime > 0 && (
+          <div className="completion-stat">
+            <Trophy size={15} strokeWidth={2.25} />
+            <strong>{completedAllTime}</strong> anime completed all-time
+            {completedThisYear > 0 && <span className="completion-stat-year">· {completedThisYear} in {currentYear}</span>}
+          </div>
+        )}
 
         {saved.length > 0 && (
           <div id="saved" className="saved-rail">

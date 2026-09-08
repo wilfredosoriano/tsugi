@@ -405,6 +405,17 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   background: var(--accent-wash); color: var(--accent-strong);
   font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
 }
+
+.completion-stat {
+  display: flex; align-items: center; gap: 8px; width: fit-content;
+  margin: 20px 0; padding: 10px 16px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent-wash), transparent);
+  border: 1px solid var(--border);
+  color: var(--text); font-size: 0.88rem;
+}
+.completion-stat svg { color: var(--gold); flex-shrink: 0; }
+.completion-stat strong { font-weight: 800; }
+.completion-stat-year { color: var(--text-faint); font-weight: 600; }
 .sheet-airing { margin: 10px 0; }
 .hero-synopsis {
   color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.5;
