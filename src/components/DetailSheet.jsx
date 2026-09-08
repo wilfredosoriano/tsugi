@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X, Play, Plus, Search, ExternalLink, Clock } from 'lucide-react';
+import { X, Play, Plus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2 } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
+
+const STATUS_ICONS = { planning: Bookmark, watching: Eye, completed: CheckCircle2 };
 
 export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, watchStatus, onSetStatus, sourceRect }) {
   const closeRef = useRef(null);
@@ -147,15 +149,18 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             )}
             {onSave && saved && (
               <div className="status-picker">
-                {WATCH_STATUSES.map((s) => (
-                  <button
-                    key={s.value}
-                    className={`status-pill${watchStatus === s.value ? ' active' : ''}`}
-                    onClick={() => onSetStatus(media.id, s.value)}
-                  >
-                    {s.emoji} {s.label}
-                  </button>
-                ))}
+                {WATCH_STATUSES.map((s) => {
+                  const Icon = STATUS_ICONS[s.value];
+                  return (
+                    <button
+                      key={s.value}
+                      className={`status-pill${watchStatus === s.value ? ' active' : ''}`}
+                      onClick={() => onSetStatus(media.id, s.value)}
+                    >
+                      <Icon size={14} strokeWidth={2.25} /> {s.label}
+                    </button>
+                  );
+                })}
                 <button
                   className="status-remove"
                   onClick={() => onSave(media)}

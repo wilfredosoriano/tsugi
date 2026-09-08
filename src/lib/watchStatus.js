@@ -4,9 +4,9 @@
  * Stored as `watchStatus` on each item in useSaved's list.
  */
 export const WATCH_STATUSES = [
-  { value: 'planning', label: 'Planning', emoji: '📌' },
-  { value: 'watching', label: 'Watching', emoji: '👀' },
-  { value: 'completed', label: 'Completed', emoji: '✅' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'watching', label: 'Watching' },
+  { value: 'completed', label: 'Completed' },
 ];
 
 export const DEFAULT_WATCH_STATUS = 'planning';
