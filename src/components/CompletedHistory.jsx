@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Share2 } from 'lucide-react';
 import { displayTitle } from '../lib/format.js';
-import WrappedCard from './WrappedCard.jsx';
+import RecapCard from './RecapCard.jsx';
 
 /**
  * Browsable "anime completed" history behind the completion-stat badge —
@@ -11,7 +11,7 @@ import WrappedCard from './WrappedCard.jsx';
  * want-to-watch list.
  */
 export default function CompletedHistory({ completions, onOpenMedia, onClose }) {
-  const [shareYear, setShareYear] = useState(null);
+  const [recapYear, setRecapYear] = useState(null);
 
   const years = Object.keys(completions)
     .filter((y) => Array.isArray(completions[y]) && completions[y].length > 0)
@@ -32,8 +32,8 @@ export default function CompletedHistory({ completions, onOpenMedia, onClose }) 
             <div key={year} className="history-year">
               <div className="history-year-head">
                 <p className="mono">{year} · {completions[year].length} title{completions[year].length === 1 ? '' : 's'}</p>
-                <button className="btn ghost history-share-btn" onClick={() => setShareYear(year)}>
-                  <Share2 size={14} /> Wrapped
+                <button className="btn ghost history-share-btn" onClick={() => setRecapYear(year)}>
+                  <Share2 size={14} /> Recap
                 </button>
               </div>
               <div className="history-grid">
@@ -54,8 +54,8 @@ export default function CompletedHistory({ completions, onOpenMedia, onClose }) 
         </div>
       </div>
 
-      {shareYear && (
-        <WrappedCard year={shareYear} items={completions[shareYear]} onClose={() => setShareYear(null)} />
+      {recapYear && (
+        <RecapCard year={recapYear} items={completions[recapYear]} onClose={() => setRecapYear(null)} />
       )}
     </div>
   );

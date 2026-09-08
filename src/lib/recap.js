@@ -1,5 +1,5 @@
-/** Tallies genre frequency across a year's completed titles for the wrapped-recap card. */
-export function computeWrapped(items) {
+/** Tallies genre frequency across a year's completed titles for the recap card. */
+export function computeRecap(items) {
   const counts = new Map();
   for (const item of items) {
     for (const g of item.genres || []) {

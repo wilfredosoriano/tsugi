@@ -153,7 +153,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                     className={`status-pill${watchStatus === s.value ? ' active' : ''}`}
                     onClick={() => onSetStatus(media.id, s.value)}
                   >
-                    {s.label}
+                    {s.emoji} {s.label}
                   </button>
                 ))}
                 <button

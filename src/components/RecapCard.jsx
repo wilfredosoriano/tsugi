@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Download, Share2 } from 'lucide-react';
-import { computeWrapped } from '../lib/wrapped.js';
+import { computeRecap } from '../lib/recap.js';
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
@@ -49,7 +49,7 @@ function draw(ctx, { year, total, genres }) {
 
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
   ctx.font = '700 30px Inter, sans-serif';
-  ctx.fillText(`WRAPPED · ${year}`, 80, 210);
+  ctx.fillText(`RECAP · ${year}`, 80, 210);
 
   // headline number
   ctx.textAlign = 'center';
@@ -111,16 +111,16 @@ function draw(ctx, { year, total, genres }) {
 }
 
 /**
- * Renders a shareable "year wrapped" recap card onto an offscreen canvas —
- * total completed + top genres for the given year — then exposes it as a
+ * Renders a shareable "year recap" card onto an offscreen canvas — total
+ * completed + top genres for the given year — then exposes it as a
  * downloadable/shareable PNG. Genre counts come from the completions
  * snapshots taken at completion time (see useSaved.js), so it stays
  * accurate even if titles are later removed from the want-to-watch list.
  */
-export default function WrappedCard({ year, items, onClose }) {
+export default function RecapCard({ year, items, onClose }) {
   const canvasRef = useRef(null);
   const [imageUrl, setImageUrl] = useState(null);
-  const stats = computeWrapped(items);
+  const stats = computeRecap(items);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +154,7 @@ export default function WrappedCard({ year, items, onClose }) {
     if (!imageUrl) return;
     const a = document.createElement('a');
     a.href = imageUrl;
-    a.download = `tsugi-wrapped-${year}.png`;
+    a.download = `tsugi-recap-${year}.png`;
     a.click();
   };
 
@@ -163,13 +163,13 @@ export default function WrappedCard({ year, items, onClose }) {
     if (!canvas) return;
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-      const file = new File([blob], `tsugi-wrapped-${year}.png`, { type: 'image/png' });
+      const file = new File([blob], `tsugi-recap-${year}.png`, { type: 'image/png' });
       if (navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
-            title: `Tsugi Wrapped ${year}`,
-            text: `My ${year} anime wrapped, made with Tsugi.`,
+            title: `Tsugi Recap ${year}`,
+            text: `My ${year} anime recap, made with Tsugi.`,
           });
         } catch {
           // user backed out of the native share sheet — no-op
@@ -184,19 +184,19 @@ export default function WrappedCard({ year, items, onClose }) {
 
   return (
     <div className="scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet wrapped-sheet" role="dialog" aria-modal="true" aria-label={`Your ${year} anime wrapped`}>
+      <div className="sheet recap-sheet" role="dialog" aria-modal="true" aria-label={`Your ${year} anime recap`}>
         <div className="sheet-head">
-          <h3 className="display">Your {year} wrapped</h3>
+          <h3 className="display">Your {year} recap</h3>
           <button className="x" onClick={onClose} aria-label="Close">
             <X size={18} strokeWidth={2.25} />
           </button>
         </div>
 
-        <div className="wrapped-body">
-          <div className="wrapped-preview">
+        <div className="recap-body">
+          <div className="recap-preview">
             {imageUrl
-              ? <img src={imageUrl} alt={`Tsugi wrapped recap card for ${year}`} />
-              : <div className="wrapped-loading">Building your card…</div>}
+              ? <img src={imageUrl} alt={`Tsugi recap card for ${year}`} />
+              : <div className="recap-loading">Building your card…</div>}
           </div>
           <canvas ref={canvasRef} hidden />
           <div className="transfer-actions">
