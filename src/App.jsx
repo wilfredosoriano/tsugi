@@ -5,6 +5,7 @@ import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ListTransfer from './components/ListTransfer.jsx';
+import CompletedHistory from './components/CompletedHistory.jsx';
 import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
@@ -74,6 +75,7 @@ export default function App() {
   const [open, setOpen] = useState(null);
   const [openSourceRect, setOpenSourceRect] = useState(null);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Grid cards pass the clicked cover's own rect so the detail sheet can
   // visually grow out of it (see DetailSheet's FLIP transition); every
@@ -373,8 +375,8 @@ export default function App() {
   const visibleSaved = statusFilter === 'all' ? saved : saved.filter((m) => m.watchStatus === statusFilter);
 
   const currentYear = String(new Date().getFullYear());
-  const completedThisYear = completions[currentYear] || 0;
-  const completedAllTime = Object.values(completions).reduce((sum, n) => sum + n, 0);
+  const completedThisYear = (completions[currentYear] || []).length;
+  const completedAllTime = Object.values(completions).reduce((sum, list) => sum + (list?.length || 0), 0);
 
   /* ── ask ────────────────────────────────────────────────── */
   async function rankPool(requestText, pool) {
@@ -516,11 +518,11 @@ export default function App() {
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
 
         {completedAllTime > 0 && (
-          <div className="completion-stat">
+          <button className="completion-stat" onClick={() => setHistoryOpen(true)}>
             <Trophy size={15} strokeWidth={2.25} />
             <strong>{completedAllTime}</strong> anime completed all-time
             {completedThisYear > 0 && <span className="completion-stat-year">· {completedThisYear} in {currentYear}</span>}
-          </div>
+          </button>
         )}
 
         {saved.length > 0 && (
@@ -688,6 +690,10 @@ export default function App() {
 
       {transferOpen && (
         <ListTransfer saved={saved} onImport={onImportList} onClose={() => setTransferOpen(false)} />
+      )}
+
+      {historyOpen && (
+        <CompletedHistory completions={completions} onOpenMedia={openMedia} onClose={() => setHistoryOpen(false)} />
       )}
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />

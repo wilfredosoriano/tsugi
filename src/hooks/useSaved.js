@@ -36,12 +36,12 @@ function withDefaultStatus(items) {
  * Each item carries its own watchStatus (planning/watching/completed),
  * defaulting to planning when first saved.
  *
- * `completions` is a { year: count } tally of titles marked Completed —
- * tracked separately from the list itself (same local/cloud split) so
- * it keeps counting toward "titles watched this year / all-time" even
- * after a title is later removed from the list, matching the "how many
- * have I watched" feeling rather than "how many are currently marked
- * done."
+ * `completions` is a { year: [snapshot, ...] } history of titles marked
+ * Completed — a lightweight copy of the media object at the moment it was
+ * completed, tracked separately from the list itself (same local/cloud
+ * split) so both the count AND the actual title stay visible even after
+ * that title is later removed from the list — matching "how many/which
+ * ones have I watched" rather than "what's currently marked done."
  *
  * Stores whole media objects so the list renders offline without refetching.
  */
@@ -131,15 +131,17 @@ export function useSaved(user) {
 
   const setWatchStatus = useCallback((id, watchStatus) => {
     const apply = (prev) => prev.map((m) => (m.id === id ? { ...m, watchStatus } : m));
-    const wasCompleted = (prev) => prev.find((m) => m.id === id)?.watchStatus === 'completed';
     const bumpCompletions = watchStatus === 'completed';
 
     if (user && db) {
       setCloudSaved((prev) => {
-        if (bumpCompletions && !wasCompleted(prev)) {
+        const item = prev.find((m) => m.id === id);
+        if (bumpCompletions && item && item.watchStatus !== 'completed') {
           const year = String(new Date().getFullYear());
+          const snapshot = { ...item, watchStatus: 'completed', completedAt: Date.now() };
           setCloudCompletions((prevCompletions) => {
-            const nextCompletions = { ...prevCompletions, [year]: (prevCompletions[year] || 0) + 1 };
+            const yearList = Array.isArray(prevCompletions[year]) ? prevCompletions[year] : [];
+            const nextCompletions = { ...prevCompletions, [year]: [snapshot, ...yearList] };
             setDoc(doc(db, 'users', user.uid), { completions: nextCompletions }, { merge: true }).catch(() => {});
             return nextCompletions;
           });
@@ -150,9 +152,14 @@ export function useSaved(user) {
       });
     } else {
       setLocalSaved((prev) => {
-        if (bumpCompletions && !wasCompleted(prev)) {
+        const item = prev.find((m) => m.id === id);
+        if (bumpCompletions && item && item.watchStatus !== 'completed') {
           const year = String(new Date().getFullYear());
-          setLocalCompletions((prevCompletions) => ({ ...prevCompletions, [year]: (prevCompletions[year] || 0) + 1 }));
+          const snapshot = { ...item, watchStatus: 'completed', completedAt: Date.now() };
+          setLocalCompletions((prevCompletions) => {
+            const yearList = Array.isArray(prevCompletions[year]) ? prevCompletions[year] : [];
+            return { ...prevCompletions, [year]: [snapshot, ...yearList] };
+          });
         }
         return apply(prev);
       });
