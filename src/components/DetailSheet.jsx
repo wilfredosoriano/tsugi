@@ -94,10 +94,26 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
     let live = true;
     setEpisodes(null);
     fetchEpisodes(media.id)
-      .then((list) => { if (live) setEpisodes(list); })
+      .then((list) => {
+        if (!live) return;
+        // Streaming sites often number episodes continuously across a whole
+        // franchise's cours, while this specific AniList entry only covers
+        // one of them — so a title like "Episode 66" can show up on a
+        // 25-episode season. Drop anything whose parsed number falls
+        // outside this entry's own episode count; leave titles we can't
+        // parse alone rather than risk hiding legitimate ones.
+        const total = media.episodes;
+        const filtered = total
+          ? list.filter((ep) => {
+              const match = ep.title?.match(/^episode\s+(\d+)/i);
+              return !match || Number(match[1]) <= total;
+            })
+          : list;
+        setEpisodes(filtered);
+      })
       .catch(() => { if (live) setEpisodes([]); });
     return () => { live = false; };
-  }, [media.id]);
+  }, [media.id, media.episodes]);
 
   const title = displayTitle(media);
   const stars = starParts(media.averageScore);
@@ -265,9 +281,12 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   {ep.thumbnail
                     ? <img src={ep.thumbnail} alt="" loading="lazy" />
                     : <span className="episode-item-thumb-fallback" aria-hidden="true"><Play size={14} fill="currentColor" /></span>}
-                  <span className="episode-item-title">{ep.title}</span>
-                  <span className="episode-item-site">{ep.site}</span>
-                  <ExternalLink size={13} className="episode-item-ext" />
+                  <span className="episode-item-info">
+                    <span className="episode-item-title">{ep.title}</span>
+                    <span className="episode-item-meta">
+                      {ep.site} <ExternalLink size={11} className="episode-item-ext" />
+                    </span>
+                  </span>
                 </a>
               ))}
             </div>
