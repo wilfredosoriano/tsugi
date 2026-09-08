@@ -3,7 +3,7 @@ import { X, Play, Plus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
-import { fetchRecommendations, fetchRelations, fetchEpisodes } from '../lib/anilist.js';
+import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
 
@@ -14,7 +14,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
   const sheetRef = useRef(null);
   const [related, setRelated] = useState(null);
   const [seasons, setSeasons] = useState(null);
-  const [episodes, setEpisodes] = useState(null);
 
   // FLIP: the sheet mounts already in its natural final position, so we
   // measure that, then paint one frame with an inline transform mapping it
@@ -89,31 +88,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
       .catch(() => { if (live) setSeasons([]); });
     return () => { live = false; };
   }, [media.id]);
-
-  useEffect(() => {
-    let live = true;
-    setEpisodes(null);
-    fetchEpisodes(media.id)
-      .then((list) => {
-        if (!live) return;
-        // Streaming sites often number episodes continuously across a whole
-        // franchise's cours, while this specific AniList entry only covers
-        // one of them — so a title like "Episode 66" can show up on a
-        // 25-episode season. Drop anything whose parsed number falls
-        // outside this entry's own episode count; leave titles we can't
-        // parse alone rather than risk hiding legitimate ones.
-        const total = media.episodes;
-        const filtered = total
-          ? list.filter((ep) => {
-              const match = ep.title?.match(/^episode\s+(\d+)/i);
-              return !match || Number(match[1]) <= total;
-            })
-          : list;
-        setEpisodes(filtered);
-      })
-      .catch(() => { if (live) setEpisodes([]); });
-    return () => { live = false; };
-  }, [media.id, media.episodes]);
 
   const title = displayTitle(media);
   const stars = starParts(media.averageScore);
@@ -265,33 +239,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             </div>
           </div>
         </div>
-
-        {episodes !== null && episodes.length > 0 && (
-          <div className="episodes">
-            <p className="mono" style={{ padding: '0 20px' }}>Episodes</p>
-            <div className="episode-list">
-              {episodes.map((ep, i) => (
-                <a
-                  key={`${ep.url}-${i}`}
-                  className="episode-item"
-                  href={ep.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {ep.thumbnail
-                    ? <img src={ep.thumbnail} alt="" loading="lazy" />
-                    : <span className="episode-item-thumb-fallback" aria-hidden="true"><Play size={14} fill="currentColor" /></span>}
-                  <span className="episode-item-info">
-                    <span className="episode-item-title">{ep.title}</span>
-                    <span className="episode-item-meta">
-                      {ep.site} <ExternalLink size={11} className="episode-item-ext" />
-                    </span>
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
 
         {seasons !== null && seasons.length > 0 && (
           <div className="related">
