@@ -801,20 +801,19 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .trailer-link { text-decoration: none; }
 
 .status-picker {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 14px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 14px;
 }
 .status-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-radius: 0; font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 6px; border-radius: 0;
   background: var(--bg-elevated-2); color: var(--text-soft);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.status-pill svg { flex-shrink: 0; }
 .status-pill:hover { background: var(--accent-wash); color: var(--accent-strong); }
 .status-pill.active { background: var(--accent-gradient); color: #fff; }
 .status-remove {
-  padding: 8px 14px; border-radius: 999px; flex-shrink: 0;
-  font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 6px; border-radius: 0;
   background: var(--bg-elevated-2); color: var(--text-faint);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }

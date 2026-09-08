@@ -156,8 +156,10 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                       key={s.value}
                       className={`status-pill${watchStatus === s.value ? ' active' : ''}`}
                       onClick={() => onSetStatus(media.id, s.value)}
+                      aria-label={s.label}
+                      title={s.label}
                     >
-                      <Icon size={14} strokeWidth={2.25} /> {s.label}
+                      <Icon size={16} strokeWidth={2.25} />
                     </button>
                   );
                 })}
@@ -167,7 +169,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   aria-label={`Remove ${title} from want-to-watch`}
                   title="Remove from list"
                 >
-                  Remove
+                  <X size={15} strokeWidth={2.25} />
                 </button>
               </div>
             )}
