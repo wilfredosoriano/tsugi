@@ -216,8 +216,13 @@ async function findReference(question) {
   );
   if (!match) return null;
 
+  // "with" is deliberately excluded here — it's meant to catch a trailing
+  // qualifier clause ("similar to X but less violent"), but plenty of real
+  // titles contain the word "with" themselves (Run with the Wind, Snow
+  // White with the Red Hair, …), and truncating those down to one word
+  // sends completely the wrong title into AniList's search.
   const guess = match[1]
-    .replace(/\b(but|with|and|that|which|though|except|however|only|without)\b[\s\S]*$/i, '')
+    .replace(/\b(but|and|that|which|though|except|however|only|without)\b[\s\S]*$/i, '')
     .replace(/[.,!?;]+$/, '')
     .trim();
 
@@ -226,7 +231,7 @@ async function findReference(question) {
   try {
     const data = await gql(
       `query ($s: String) {
-        Media(search: $s, type: ANIME, isAdult: false) { id title { romaji english } }
+        Media(search: $s, type: ANIME, isAdult: false, sort: SEARCH_MATCH) { id title { romaji english } }
       }`,
       { s: guess }
     );
@@ -315,16 +320,31 @@ async function poolFromReference(referenceId) {
   return pool;
 }
 
+/**
+ * Marks which entries actually came from the reference's own recommendation
+ * graph/tags vs. which are broadPool() filler pulled in only because that
+ * pool was thin. Filler is just generic top scorers with no real tie to the
+ * reference's genre or tone — fine as a last resort for the first answer,
+ * but "more like this" (see App.jsx) should never reach for it, or a
+ * sports-drama request can end up padded out with something like a fantasy
+ * adventure film several clicks in.
+ */
+function markCore(corePool, filledPool, alwaysCore) {
+  const coreIds = new Set(corePool.keys());
+  return [...filledPool.values()].map((m) => ({ ...m, _core: alwaysCore || coreIds.has(m.id) }));
+}
+
 /** Grounds a natural-language question ("similar to X") in the real catalog. */
 export async function fetchCandidates(question) {
   const reference = await findReference(question);
-  const pool = reference ? await poolFromReference(reference.id) : new Map();
+  const corePool = reference ? await poolFromReference(reference.id) : new Map();
+  const pool = new Map(corePool);
 
   if (pool.size < 14) {
-    for (const m of await broadPool()) pool.set(m.id, m);
+    for (const m of await broadPool()) if (!pool.has(m.id)) pool.set(m.id, m);
   }
 
-  return { reference, pool: [...pool.values()].slice(0, 40) };
+  return { reference, pool: markCore(corePool, pool, !reference).slice(0, 40) };
 }
 
 /**
@@ -333,13 +353,14 @@ export async function fetchCandidates(question) {
  * already saved, with no NL question involved.
  */
 export async function fetchCandidatesForMedia(reference) {
-  const pool = await poolFromReference(reference.id);
+  const corePool = await poolFromReference(reference.id);
+  const pool = new Map(corePool);
 
   if (pool.size < 14) {
-    for (const m of await broadPool()) pool.set(m.id, m);
+    for (const m of await broadPool()) if (!pool.has(m.id)) pool.set(m.id, m);
   }
 
-  return { reference, pool: [...pool.values()].slice(0, 40) };
+  return { reference, pool: markCore(corePool, pool, false).slice(0, 40) };
 }
 
 /**

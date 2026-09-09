@@ -451,11 +451,15 @@ export default function App() {
 
   /* Grows the current answer with more picks from the SAME candidate pool
      and the SAME original request — no re-typing needed. Excludes whatever
-     is already on screen so the model can't just repeat itself. */
+     is already on screen so the model can't just repeat itself, and sticks
+     to _core candidates (genuinely tied to the reference's own recommendation
+     graph/tags) rather than reaching into broadPool() filler once the good
+     matches run out — otherwise a "sports-drama" request could end up padded
+     with something totally unrelated a few clicks in. */
   async function moreLikeThis() {
     if (!askPool || !answer) return;
     const shown = new Set(answer.picks.map((m) => m.id));
-    const remaining = askPool.filter((m) => !shown.has(m.id));
+    const remaining = askPool.filter((m) => !shown.has(m.id) && m._core !== false);
     if (!remaining.length) return;
 
     setAsking(true);
@@ -476,7 +480,9 @@ export default function App() {
   }
 
   const shownPickIds = answer ? new Set(answer.picks.map((m) => m.id)) : null;
-  const hasMorePicks = askPool && shownPickIds ? askPool.some((m) => !shownPickIds.has(m.id)) : false;
+  const hasMorePicks = askPool && shownPickIds
+    ? askPool.some((m) => !shownPickIds.has(m.id) && m._core !== false)
+    : false;
 
   return (
     <>
