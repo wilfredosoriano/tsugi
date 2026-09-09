@@ -19,6 +19,7 @@ import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
 import { displayTitle } from './lib/format.js';
 import { WATCH_STATUSES } from './lib/watchStatus.js';
+import { enablePush, disablePush, sendTestPush } from './lib/push.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
 
@@ -91,9 +92,36 @@ export default function App() {
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
   const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
-  const { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready: savedReady, completions } = useSaved(user);
+  const { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready: savedReady, completions, notificationsEnabled } = useSaved(user);
   const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const onToggleNotifications = useCallback(async () => {
+    setPushBusy(true);
+    try {
+      if (notificationsEnabled) {
+        await disablePush(user);
+        pushToast('Episode notifications turned off');
+      } else {
+        await enablePush(user);
+        pushToast('Episode notifications turned on');
+      }
+    } catch (err) {
+      pushToast(err.message);
+    } finally {
+      setPushBusy(false);
+    }
+  }, [notificationsEnabled, user, pushToast]);
+
+  const onTestNotification = useCallback(async () => {
+    try {
+      await sendTestPush();
+      pushToast('Test sent — check your device');
+    } catch (err) {
+      pushToast(err.message);
+    }
+  }, [pushToast]);
 
   const onImportList = useCallback((items) => {
     const result = merge(items);
@@ -500,6 +528,10 @@ export default function App() {
         onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
         syncEnabled={syncEnabled}
+        notificationsEnabled={notificationsEnabled}
+        onToggleNotifications={onToggleNotifications}
+        onTestNotification={onTestNotification}
+        pushBusy={pushBusy}
       />
 
       {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (

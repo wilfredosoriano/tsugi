@@ -54,6 +54,12 @@ export function useSaved(user) {
   const [localCompletions, setLocalCompletions] = useState({});
   const [cloudCompletions, setCloudCompletions] = useState({});
 
+  // Rides the same per-user doc listener rather than opening a second one —
+  // notificationsEnabled lives on this same Firestore document (see
+  // src/lib/push.js), and only ever applies to the signed-in/cloud path
+  // anyway (there's no server-side record to notify a local-only session).
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -88,6 +94,7 @@ export function useSaved(user) {
     if (!user || !db) {
       setCloudSaved([]);
       setCloudCompletions({});
+      setNotificationsEnabled(false);
       setCloudReady(false);
       return undefined;
     }
@@ -98,6 +105,7 @@ export function useSaved(user) {
       (snap) => {
         setCloudSaved(withDefaultStatus(snap.data()?.saved || []));
         setCloudCompletions(snap.data()?.completions || {});
+        setNotificationsEnabled(Boolean(snap.data()?.notificationsEnabled));
         setCloudReady(true);
       },
       () => setCloudReady(true) // offline/blocked — show empty rather than hang
@@ -211,5 +219,5 @@ export function useSaved(user) {
     };
   }, [saved, user]);
 
-  return { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready, completions };
+  return { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready, completions, notificationsEnabled };
 }

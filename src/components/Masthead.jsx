@@ -1,13 +1,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon, ArrowLeftRight, LogOut } from 'lucide-react';
+import { Sun, Moon, ArrowLeftRight, LogOut, Bell, BellOff } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, TAG_GENRES, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
+import { pushSupported } from '../lib/push.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
 
-export default function Masthead({ activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, user, onGoogleCredential, onSignOut, syncEnabled }) {
+export default function Masthead({
+  activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
+  user, onGoogleCredential, onSignOut, syncEnabled,
+  notificationsEnabled, onToggleNotifications, onTestNotification, pushBusy,
+}) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
@@ -254,6 +259,26 @@ export default function Masthead({ activeGenre, search, onGenre, onSearch, onOpe
                   {accountMenuOpen && (
                     <div className="account-menu" role="menu">
                       <p className="account-menu-email">{user.email}</p>
+                      {pushSupported && (
+                        <>
+                          <button
+                            className="account-menu-item"
+                            role="menuitemcheckbox"
+                            aria-checked={notificationsEnabled}
+                            disabled={pushBusy}
+                            onClick={onToggleNotifications}
+                          >
+                            {notificationsEnabled ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
+                            Episode notifications
+                            <span className="account-menu-toggle" data-on={notificationsEnabled} />
+                          </button>
+                          {notificationsEnabled && (
+                            <button className="account-menu-item" role="menuitem" onClick={onTestNotification}>
+                              Send test notification
+                            </button>
+                          )}
+                        </>
+                      )}
                       <button
                         className="account-menu-signout"
                         role="menuitem"
