@@ -52,7 +52,6 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [question, setQuestion] = useState('');
-  const [followUp, setFollowUp] = useState('');
   const [askedQuestion, setAskedQuestion] = useState('');
   const [askPool, setAskPool] = useState(null); // the candidate pool behind the current answer
   const [answer, setAnswer] = useState(null); // { intro, picks, reference, degraded, ranked }
@@ -428,7 +427,6 @@ export default function App() {
     setAskError('');
     setAnswer(null);
     setAskPool(null);
-    setFollowUp('');
     setAskStage('Pulling candidates from the catalog');
 
     try {
@@ -451,24 +449,34 @@ export default function App() {
     }
   }
 
-  /* Refines the SAME candidate pool instead of pulling a fresh one from
-     AniList — cheaper, and lets "more like #3, but shorter" actually work
-     against what's already on screen. */
-  async function refine() {
-    const q = followUp.trim();
-    if (!q || !askPool) return;
+  /* Grows the current answer with more picks from the SAME candidate pool
+     and the SAME original request — no re-typing needed. Excludes whatever
+     is already on screen so the model can't just repeat itself. */
+  async function moreLikeThis() {
+    if (!askPool || !answer) return;
+    const shown = new Set(answer.picks.map((m) => m.id));
+    const remaining = askPool.filter((m) => !shown.has(m.id));
+    if (!remaining.length) return;
 
     setAsking(true);
-    setAskStage('Refining picks');
+    setAskStage('Finding more picks');
     try {
-      const combined = `Original request: ${askedQuestion}\nFollow-up: ${q}`;
-      await rank(combined, askPool, answer?.reference ?? null);
-      setFollowUp('');
+      const result = await rankPool(askedQuestion, remaining);
+      if (result.picks.length) {
+        setAnswer((prev) => ({
+          ...prev,
+          picks: [...prev.picks, ...result.picks],
+          ranked: prev.ranked && !result.degraded,
+        }));
+      }
     } finally {
       setAsking(false);
       setAskStage('');
     }
   }
+
+  const shownPickIds = answer ? new Set(answer.picks.map((m) => m.id)) : null;
+  const hasMorePicks = askPool && shownPickIds ? askPool.some((m) => !shownPickIds.has(m.id)) : false;
 
   return (
     <>
@@ -621,19 +629,10 @@ export default function App() {
               isSaved={isSaved}
             />
 
-            {askPool && (
+            {hasMorePicks && (
               <div className="refine">
-                <input
-                  type="text"
-                  value={followUp}
-                  onChange={(e) => setFollowUp(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && refine()}
-                  placeholder="Refine these picks — e.g. “more like #3, but shorter”"
-                  aria-label="Refine these recommendations"
-                  disabled={asking}
-                />
-                <button className="btn ghost" onClick={refine} disabled={asking || !followUp.trim()}>
-                  Refine
+                <button className="btn ghost" onClick={moreLikeThis} disabled={asking}>
+                  More like this
                 </button>
               </div>
             )}

@@ -14,6 +14,7 @@ const MEDIA_FIELDS = `
   averageScore
   popularity
   episodes
+  duration
   seasonYear
   format
   status
@@ -26,6 +27,27 @@ const MEDIA_FIELDS = `
   trailer { id site }
   nextAiringEpisode { airingAt episode }
 `;
+
+/**
+ * Bolted onto MEDIA_FIELDS only where the AI recommendation pool is built —
+ * lets isSequel() below tell a franchise's season 1 apart from its sequels,
+ * so the recommender never surfaces "Season 3" as if it were a fresh pick.
+ */
+const RELATION_CHECK_FIELDS = `
+  relations {
+    edges {
+      relationType(version: 2)
+      node { id type }
+    }
+  }
+`;
+
+/** True when something else in the franchise is meant to be watched first. */
+function isSequel(m) {
+  return (m.relations?.edges || []).some(
+    (e) => e.relationType === 'PREQUEL' && e.node?.type === 'ANIME'
+  );
+}
 
 export const GENRES = [
   'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Sci-Fi', 'Romance',
@@ -214,16 +236,30 @@ async function findReference(question) {
   }
 }
 
-/** A pool of high scorers, used whenever a reference-driven pool comes back thin. */
+/**
+ * A pool of high scorers, used whenever a reference-driven pool comes back
+ * thin. AniList's top-scored list skews heavily toward a franchise's later,
+ * best-reviewed seasons (only its most invested fans tend to rate the
+ * finale) — after isSequel() filters those out, one page of 40 often
+ * collapses to under 10 real candidates, so this pages through a few more
+ * until there's a decent-sized pool of genuinely standalone/first entries.
+ */
 async function broadPool() {
-  const data = await gql(
-    `query {
-      Page(page: 1, perPage: 40) {
-        media(type: ANIME, isAdult: false, sort: SCORE_DESC) { ${MEDIA_FIELDS} }
-      }
-    }`
-  );
-  return data.Page.media.filter(hasCover);
+  const pool = new Map();
+  for (let page = 1; page <= 3 && pool.size < 30; page++) {
+    const data = await gql(
+      `query ($page: Int) {
+        Page(page: $page, perPage: 40) {
+          media(type: ANIME, isAdult: false, sort: SCORE_DESC) { ${MEDIA_FIELDS} ${RELATION_CHECK_FIELDS} }
+        }
+      }`,
+      { page }
+    );
+    for (const m of data.Page.media) {
+      if (hasCover(m) && !isSequel(m)) pool.set(m.id, m);
+    }
+  }
+  return [...pool.values()];
 }
 
 /**
@@ -231,6 +267,10 @@ async function broadPool() {
  * sees anything, from two sources in order of specificity:
  *   1. the reference title's own curated recommendation graph
  *   2. high scorers sharing the reference's strongest tags
+ * Sequels/later seasons are filtered out here rather than left for the model
+ * to catch — a title that's clearly "Season 3" by name is easy to spot, but
+ * plenty of sequels don't say so in the title at all, so this leans on
+ * AniList's own relation graph instead of a naming guess.
  */
 async function poolFromReference(referenceId) {
   const pool = new Map();
@@ -239,7 +279,7 @@ async function poolFromReference(referenceId) {
       Media(id: $id) {
         tags { name rank }
         recommendations(sort: RATING_DESC, perPage: 24) {
-          nodes { mediaRecommendation { ${MEDIA_FIELDS} } }
+          nodes { mediaRecommendation { ${MEDIA_FIELDS} ${RELATION_CHECK_FIELDS} } }
         }
       }
     }`,
@@ -248,7 +288,7 @@ async function poolFromReference(referenceId) {
 
   for (const node of data.Media.recommendations.nodes || []) {
     const m = node.mediaRecommendation;
-    if (hasCover(m) && m.id !== referenceId) pool.set(m.id, m);
+    if (hasCover(m) && m.id !== referenceId && !isSequel(m)) pool.set(m.id, m);
   }
 
   const tags = (data.Media.tags || [])
@@ -261,14 +301,14 @@ async function poolFromReference(referenceId) {
       `query ($tags: [String]) {
         Page(page: 1, perPage: 24) {
           media(type: ANIME, isAdult: false, tag_in: $tags, sort: SCORE_DESC) {
-            ${MEDIA_FIELDS}
+            ${MEDIA_FIELDS} ${RELATION_CHECK_FIELDS}
           }
         }
       }`,
       { tags }
     );
     for (const m of widened.Page.media) {
-      if (hasCover(m) && m.id !== referenceId) pool.set(m.id, m);
+      if (hasCover(m) && m.id !== referenceId && !isSequel(m)) pool.set(m.id, m);
     }
   }
 
@@ -394,6 +434,8 @@ export function toPromptRows(pool) {
     title: m.title.english || m.title.romaji,
     genres: m.genres,
     episodes: m.episodes,
+    duration: m.duration,
+    format: m.format,
     score: m.averageScore,
   }));
 }
