@@ -608,7 +608,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 /* ── refine: pulls more picks from the same candidate pool ─── */
 .refine {
-  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+  display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;
 }
 .refine .btn { padding: 10px 20px; font-size: 0.85rem; }
 .btn.ghost {
