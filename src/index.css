@@ -718,6 +718,12 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   font-weight: 700; font-size: 0.68rem; letter-spacing: 0.01em;
   padding: 3px 8px; border-radius: 999px;
 }
+.plate .progress-badge {
+  position: absolute; bottom: 8px; right: 8px; z-index: 2;
+  background: var(--accent-gradient); color: #fff;
+  font-weight: 700; font-size: 0.68rem; letter-spacing: 0.01em;
+  padding: 3px 8px; border-radius: 999px;
+}
 .plate .hover-note {
   position: absolute; inset: auto 0 0 0; padding: 30px 11px 11px; z-index: 1;
   background: linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.4) 65%, transparent);
@@ -810,6 +816,27 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
 .status-remove:hover { background: var(--danger-wash); color: var(--danger); }
+
+.progress-tracker {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px;
+}
+.progress-step {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 0;
+  background: var(--bg-elevated-2); color: var(--text-soft);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.progress-step:hover:not(:disabled) { background: var(--accent-wash); color: var(--accent-strong); }
+.progress-step:disabled { opacity: 0.4; cursor: default; }
+.progress-num {
+  width: 44px; text-align: center; border-radius: var(--radius-sm);
+  background: var(--bg-elevated-2); border: 1px solid transparent;
+  padding: 6px 2px; font-size: 0.85rem; font-weight: 700; color: var(--text);
+  -moz-appearance: textfield;
+}
+.progress-num::-webkit-inner-spin-button, .progress-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.progress-num:focus { outline: none; border-color: var(--accent); }
+.progress-total { font-size: 0.8rem; font-weight: 700; color: var(--text-faint); }
 
 /* ── list transfer (export/import, no account needed) ─────── */
 .transfer-sheet { max-width: 480px; }

@@ -43,6 +43,12 @@ export default function Plate({ media, rank, index = 0, caption, saved, onOpen, 
           </span>
         )}
 
+        {media.watchStatus === 'watching' && media.progress > 0 && (
+          <span className="progress-badge">
+            Ep {media.progress}{media.episodes ? `/${media.episodes}` : ''}
+          </span>
+        )}
+
         <button
           className={`save${saved ? ' on' : ''}`}
           onClick={() => onSave(media)}

@@ -129,6 +129,28 @@ export function useSaved(user) {
     }
   }, [user]);
 
+  /** Manual episode tally for a Watching-status item — the app has no way to
+      know what's actually been watched (it only links out to streaming
+      sites), so this is self-reported, same as MAL/AniList's own list
+      tracking. Clamped to [0, episodes] when the total is known. */
+  const setProgress = useCallback((id, progress) => {
+    const apply = (prev) => prev.map((m) => {
+      if (m.id !== id) return m;
+      const max = Number.isFinite(m.episodes) ? m.episodes : Infinity;
+      return { ...m, progress: Math.max(0, Math.min(progress, max)) };
+    });
+
+    if (user && db) {
+      setCloudSaved((prev) => {
+        const next = apply(prev);
+        setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }, { merge: true }).catch(() => {});
+        return next;
+      });
+    } else {
+      setLocalSaved(apply);
+    }
+  }, [user]);
+
   const setWatchStatus = useCallback((id, watchStatus) => {
     const apply = (prev) => prev.map((m) => (m.id === id ? { ...m, watchStatus } : m));
     const bumpCompletions = watchStatus === 'completed';
@@ -189,5 +211,5 @@ export function useSaved(user) {
     };
   }, [saved, user]);
 
-  return { saved, isSaved, toggle, setWatchStatus, merge, ready, completions };
+  return { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready, completions };
 }

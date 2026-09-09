@@ -91,7 +91,7 @@ export default function App() {
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
   const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
-  const { saved, isSaved, toggle, setWatchStatus, merge, ready: savedReady, completions } = useSaved(user);
+  const { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready: savedReady, completions } = useSaved(user);
   const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
 
@@ -689,6 +689,8 @@ export default function App() {
           isSaved={isSaved}
           watchStatus={saved.find((m) => m.id === open.id)?.watchStatus}
           onSetStatus={setWatchStatus}
+          progress={saved.find((m) => m.id === open.id)?.progress}
+          onSetProgress={setProgress}
           sourceRect={openSourceRect}
         />
       )}

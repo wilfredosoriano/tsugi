@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X, Play, Plus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2 } from 'lucide-react';
+import { X, Play, Plus, Minus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2 } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
@@ -9,7 +9,7 @@ const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin
 
 const STATUS_ICONS = { planning: Bookmark, watching: Eye, completed: CheckCircle2 };
 
-export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, watchStatus, onSetStatus, sourceRect }) {
+export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isSaved, watchStatus, onSetStatus, progress, onSetProgress, sourceRect }) {
   const closeRef = useRef(null);
   const sheetRef = useRef(null);
   const [related, setRelated] = useState(null);
@@ -170,6 +170,37 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   title="Remove from list"
                 >
                   <X size={15} strokeWidth={2.25} />
+                </button>
+              </div>
+            )}
+            {onSave && saved && watchStatus === 'watching' && (
+              <div className="progress-tracker">
+                <button
+                  className="progress-step"
+                  onClick={() => onSetProgress(media.id, (progress || 0) - 1)}
+                  disabled={!progress}
+                  aria-label="One episode back"
+                >
+                  <Minus size={14} strokeWidth={2.5} />
+                </button>
+                <input
+                  className="progress-num"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={media.episodes || undefined}
+                  value={progress || 0}
+                  onChange={(e) => onSetProgress(media.id, Number(e.target.value) || 0)}
+                  aria-label="Episodes watched"
+                />
+                <span className="progress-total">/ {media.episodes || '?'}</span>
+                <button
+                  className="progress-step"
+                  onClick={() => onSetProgress(media.id, (progress || 0) + 1)}
+                  disabled={media.episodes ? progress >= media.episodes : false}
+                  aria-label="One episode forward"
+                >
+                  <Plus size={14} strokeWidth={2.5} />
                 </button>
               </div>
             )}
