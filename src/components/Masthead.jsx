@@ -20,7 +20,7 @@ function loadSeen() {
 
 export default function Masthead({
   activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
-  user, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
+  user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
@@ -318,7 +318,15 @@ export default function Masthead({
               )}
             </div>
             {syncEnabled && (
-              user ? (
+              !authReady ? (
+                // Firebase's own session check is async — on a cold start
+                // (a force-closed PWA, a fresh tab) `user` briefly reads
+                // null before it resolves. Rendering the sign-in button
+                // during that gap flashes "signed out" for an instant even
+                // for someone who already is signed in, so hold a neutral
+                // placeholder here until the real answer is known.
+                <span className="account-skeleton" aria-hidden="true" />
+              ) : user ? (
                 <div className="account" ref={accountRef}>
                   <button
                     className="account-trigger"

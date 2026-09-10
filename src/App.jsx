@@ -90,7 +90,7 @@ export default function App() {
     setOpenSourceRect(null);
   }, []);
   const { toasts, push: pushToast, dismiss: dismissToast } = useToast();
-  const { user, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
+  const { user, authReady, handleGoogleCredential, signOut, enabled: syncEnabled } = useAuth(pushToast);
   const { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready: savedReady, completions } = useSaved(user);
   const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
@@ -500,6 +500,7 @@ export default function App() {
         onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
         syncEnabled={syncEnabled}
+        authReady={authReady}
         airingAlerts={myAiringSoonState === 'ready' ? myAiringSoon : []}
       />
 
