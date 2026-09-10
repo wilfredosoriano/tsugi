@@ -294,6 +294,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bell-menu-when { font-size: 0.72rem; color: var(--text-faint); }
+.bell-menu-empty { padding: 12px 8px 6px; font-size: 0.82rem; color: var(--text-faint); }
 @keyframes menu-in {
   from { opacity: 0; transform: translateY(-6px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }

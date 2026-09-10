@@ -279,22 +279,22 @@ export default function Masthead({
             >
               {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
             </button>
-            {airingAlerts?.length > 0 && (
-              <div className="bell" ref={bellRef}>
-                <button
-                  className="icon-btn"
-                  onClick={toggleBell}
-                  aria-haspopup="true"
-                  aria-expanded={bellOpen}
-                  aria-label={unseenAlerts.length > 0 ? `${unseenAlerts.length} new airing alerts` : 'Airing alerts'}
-                  title="Airing alerts"
-                >
-                  <Bell size={17} strokeWidth={2} />
-                  {unseenAlerts.length > 0 && <span className="bell-badge">{unseenAlerts.length}</span>}
-                </button>
-                {bellOpen && (
-                  <div className="bell-menu" role="menu">
-                    <p className="bell-menu-title">Airing soon</p>
+            <div className="bell" ref={bellRef}>
+              <button
+                className="icon-btn"
+                onClick={toggleBell}
+                aria-haspopup="true"
+                aria-expanded={bellOpen}
+                aria-label={unseenAlerts.length > 0 ? `${unseenAlerts.length} new airing alerts` : 'Airing alerts'}
+                title="Airing alerts"
+              >
+                <Bell size={17} strokeWidth={2} />
+                {unseenAlerts.length > 0 && <span className="bell-badge">{unseenAlerts.length}</span>}
+              </button>
+              {bellOpen && (
+                <div className="bell-menu" role="menu">
+                  <p className="bell-menu-title">Airing soon</p>
+                  {airingAlerts?.length > 0 ? (
                     <div className="bell-menu-list">
                       {airingAlerts.map((a) => (
                         <button
@@ -311,7 +311,10 @@ export default function Masthead({
                         </button>
                       ))}
                     </div>
-                  </div>
+                  ) : (
+                    <p className="bell-menu-empty">Nothing on your Watching list airs soon.</p>
+                  )}
+                </div>
                 )}
               </div>
             )}
