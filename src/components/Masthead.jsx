@@ -1,17 +1,26 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon, ArrowLeftRight, LogOut, Bell, BellOff } from 'lucide-react';
+import { Sun, Moon, ArrowLeftRight, LogOut, Bell } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, TAG_GENRES, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
-import { pushSupported } from '../lib/push.js';
+import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
+const SEEN_KEY = 'tsugi:seenAiring';
+const alertKey = (a) => `${a.media.id}:${a.episode}`;
+
+function loadSeen() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
 
 export default function Masthead({
   activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
-  user, onGoogleCredential, onSignOut, syncEnabled,
-  notificationsEnabled, onToggleNotifications, pushBusy,
+  user, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
@@ -40,6 +49,9 @@ export default function Masthead({
   const [indicator, setIndicator] = useState(null); // { left, top, width, height }
   const accountRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const bellRef = useRef(null);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [seen, setSeen] = useState(loadSeen);
 
   // Slides/resizes a shared pill behind the active button instead of each
   // button instantly swapping its own background — measured off the real
@@ -129,6 +141,7 @@ export default function Masthead({
     const onOutside = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
       if (accountRef.current && !accountRef.current.contains(e.target)) setAccountMenuOpen(false);
+      if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
     };
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
@@ -140,6 +153,32 @@ export default function Masthead({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [accountMenuOpen]);
+
+  useEffect(() => {
+    if (!bellOpen) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setBellOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [bellOpen]);
+
+  const unseenAlerts = (airingAlerts || []).filter((a) => !seen.has(alertKey(a)));
+
+  const toggleBell = () => {
+    setBellOpen((v) => {
+      const next = !v;
+      if (next && unseenAlerts.length) {
+        const nextSeen = new Set(seen);
+        (airingAlerts || []).forEach((a) => nextSeen.add(alertKey(a)));
+        setSeen(nextSeen);
+        try {
+          localStorage.setItem(SEEN_KEY, JSON.stringify([...nextSeen]));
+        } catch {
+          // quota or private mode — the badge just won't stay cleared next visit
+        }
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
@@ -240,6 +279,42 @@ export default function Masthead({
             >
               {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
             </button>
+            {airingAlerts?.length > 0 && (
+              <div className="bell" ref={bellRef}>
+                <button
+                  className="icon-btn"
+                  onClick={toggleBell}
+                  aria-haspopup="true"
+                  aria-expanded={bellOpen}
+                  aria-label={unseenAlerts.length > 0 ? `${unseenAlerts.length} new airing alerts` : 'Airing alerts'}
+                  title="Airing alerts"
+                >
+                  <Bell size={17} strokeWidth={2} />
+                  {unseenAlerts.length > 0 && <span className="bell-badge">{unseenAlerts.length}</span>}
+                </button>
+                {bellOpen && (
+                  <div className="bell-menu" role="menu">
+                    <p className="bell-menu-title">Airing soon</p>
+                    <div className="bell-menu-list">
+                      {airingAlerts.map((a) => (
+                        <button
+                          key={alertKey(a)}
+                          className="bell-menu-item"
+                          role="menuitem"
+                          onClick={() => { setBellOpen(false); onOpenMedia(a.media); }}
+                        >
+                          <img src={a.media.coverImage.large} alt="" loading="lazy" />
+                          <span className="bell-menu-info">
+                            <span className="bell-menu-name">{displayTitle(a.media)}</span>
+                            <span className="bell-menu-when">Episode {a.episode} · {formatAiring(a.airingAt)}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {syncEnabled && (
               user ? (
                 <div className="account" ref={accountRef}>
@@ -259,19 +334,6 @@ export default function Masthead({
                   {accountMenuOpen && (
                     <div className="account-menu" role="menu">
                       <p className="account-menu-email">{user.email}</p>
-                      {pushSupported && (
-                        <button
-                          className="account-menu-item"
-                          role="menuitemcheckbox"
-                          aria-checked={notificationsEnabled}
-                          disabled={pushBusy}
-                          onClick={onToggleNotifications}
-                        >
-                          {notificationsEnabled ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
-                          Episode notifications
-                          <span className="account-menu-toggle" data-on={notificationsEnabled} />
-                        </button>
-                      )}
                       <button
                         className="account-menu-signout"
                         role="menuitem"
