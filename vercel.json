@@ -11,5 +11,11 @@
       ],
       "destination": "/api/og"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/notify-airing",
+      "schedule": "0 8 * * *"
+    }
   ]
 }
