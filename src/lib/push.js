@@ -19,12 +19,6 @@ function urlBase64ToUint8Array(base64) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-async function currentSubscription() {
-  const reg = await navigator.serviceWorker.register('/sw.js');
-  await navigator.serviceWorker.ready;
-  return reg.pushManager.getSubscription();
-}
-
 /** Turns push on: asks OS/browser permission, subscribes, and saves the subscription to the signed-in user's Firestore doc. */
 export async function enablePush(user) {
   if (!pushSupported) throw new Error("This browser can't receive push notifications.");
@@ -71,19 +65,4 @@ export async function disablePush(user) {
   if (user && db) {
     await setDoc(doc(db, 'users', user.uid), { notificationsEnabled: false }, { merge: true }).catch(() => {});
   }
-}
-
-/** One-off test push to THIS device's current subscription — bypasses Firestore and the daily digest, for verifying the pipeline end to end. */
-export async function sendTestPush() {
-  const sub = await currentSubscription();
-  if (!sub) throw new Error('Turn on notifications first.');
-
-  const res = await fetch('/api/push-test', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subscription: sub.toJSON() }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-  return data;
 }

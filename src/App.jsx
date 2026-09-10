@@ -19,7 +19,7 @@ import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
 import { displayTitle } from './lib/format.js';
 import { WATCH_STATUSES } from './lib/watchStatus.js';
-import { enablePush, disablePush, sendTestPush } from './lib/push.js';
+import { enablePush, disablePush } from './lib/push.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
 
@@ -113,15 +113,6 @@ export default function App() {
       setPushBusy(false);
     }
   }, [notificationsEnabled, user, pushToast]);
-
-  const onTestNotification = useCallback(async () => {
-    try {
-      await sendTestPush();
-      pushToast('Test sent — check your device');
-    } catch (err) {
-      pushToast(err.message);
-    }
-  }, [pushToast]);
 
   const onImportList = useCallback((items) => {
     const result = merge(items);
@@ -530,7 +521,6 @@ export default function App() {
         syncEnabled={syncEnabled}
         notificationsEnabled={notificationsEnabled}
         onToggleNotifications={onToggleNotifications}
-        onTestNotification={onTestNotification}
         pushBusy={pushBusy}
       />
 

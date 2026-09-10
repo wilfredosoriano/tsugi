@@ -11,7 +11,7 @@ const MIN_CHARS = 2;
 export default function Masthead({
   activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
   user, onGoogleCredential, onSignOut, syncEnabled,
-  notificationsEnabled, onToggleNotifications, onTestNotification, pushBusy,
+  notificationsEnabled, onToggleNotifications, pushBusy,
 }) {
   const [term, setTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
@@ -260,24 +260,17 @@ export default function Masthead({
                     <div className="account-menu" role="menu">
                       <p className="account-menu-email">{user.email}</p>
                       {pushSupported && (
-                        <>
-                          <button
-                            className="account-menu-item"
-                            role="menuitemcheckbox"
-                            aria-checked={notificationsEnabled}
-                            disabled={pushBusy}
-                            onClick={onToggleNotifications}
-                          >
-                            {notificationsEnabled ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
-                            Episode notifications
-                            <span className="account-menu-toggle" data-on={notificationsEnabled} />
-                          </button>
-                          {notificationsEnabled && (
-                            <button className="account-menu-item" role="menuitem" onClick={onTestNotification}>
-                              Send test notification
-                            </button>
-                          )}
-                        </>
+                        <button
+                          className="account-menu-item"
+                          role="menuitemcheckbox"
+                          aria-checked={notificationsEnabled}
+                          disabled={pushBusy}
+                          onClick={onToggleNotifications}
+                        >
+                          {notificationsEnabled ? <Bell size={15} strokeWidth={2} /> : <BellOff size={15} strokeWidth={2} />}
+                          Episode notifications
+                          <span className="account-menu-toggle" data-on={notificationsEnabled} />
+                        </button>
                       )}
                       <button
                         className="account-menu-signout"
