@@ -315,9 +315,8 @@ export default function Masthead({
                     <p className="bell-menu-empty">Nothing on your Watching list airs soon.</p>
                   )}
                 </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
             {syncEnabled && (
               user ? (
                 <div className="account" ref={accountRef}>
