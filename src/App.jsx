@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import Masthead from './components/Masthead.jsx';
-import ParallaxBackground from './components/ParallaxBackground.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
@@ -490,7 +489,6 @@ export default function App() {
 
   return (
     <>
-      <ParallaxBackground />
       <Masthead
         activeGenre={genre}
         search={search}
