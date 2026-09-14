@@ -434,54 +434,11 @@ export async function fetchFeaturedPool() {
 }
 
 /**
- * Episodes airing soon, across ongoing (or about-to-premiere) anime, for
- * the homepage "Airing soon" rail — so users can see what's about to drop
- * without opening every ongoing title one by one. `airingSchedules` has
- * no per-media isAdult filter of its own, so that's applied client-side,
- * along with deduping (a title can appear once per upcoming episode).
- *
- * Sorting purely by airing time surfaces whatever happens to air in the
- * next hour regardless of how obscure it is, which reads as "random
- * anime" rather than "airing soon" the way other anime sites show it.
- * Instead this pulls a wider week-long window, keeps only the most
- * popular titles in it, and only then sorts that subset chronologically.
- */
-export async function fetchAiringSoon(limit = 15) {
-  const now = Math.floor(Date.now() / 1000);
-  const soon = now + 60 * 60 * 24 * 7;
-  const data = await gql(
-    `query ($now: Int, $soon: Int, $perPage: Int) {
-      Page(page: 1, perPage: $perPage) {
-        airingSchedules(airingAt_greater: $now, airingAt_lesser: $soon, sort: TIME) {
-          airingAt
-          episode
-          media { ${MEDIA_FIELDS} }
-        }
-      }
-    }`,
-    { now, soon, perPage: 100 }
-  );
-
-  const seen = new Set();
-  const candidates = [];
-  for (const s of data.Page.airingSchedules) {
-    const m = s.media;
-    if (!hasCover(m) || m.isAdult || seen.has(m.id)) continue;
-    seen.add(m.id);
-    candidates.push({ media: m, episode: s.episode, airingAt: s.airingAt });
-  }
-
-  return candidates
-    .sort((a, b) => (b.media.popularity || 0) - (a.media.popularity || 0))
-    .slice(0, limit)
-    .sort((a, b) => a.airingAt - b.airingAt);
-}
-
-/**
  * Live next-episode airing info for a specific set of media (e.g. a
  * user's own Watching-status list), for the "Your shows airing soon"
- * rail — distinct from fetchAiringSoon's popularity-curated pool, since a
- * personally-tracked show may not be popular enough to land in that one.
+ * rail — distinct from the weekly calendar's popularity-curated pool,
+ * since a personally-tracked show may not be popular enough to land in
+ * that one.
  * Ignores titles with nothing currently scheduled (finished, hiatus, etc).
  */
 export async function fetchAiringForIds(ids) {
@@ -515,10 +472,9 @@ export function toPromptRows(pool) {
 
 /**
  * Everything airing this calendar week (Monday through Sunday, in the
- * viewer's own local time), bucketed by day — a browsing/discovery surface
- * distinct from fetchAiringSoon's popularity-curated "next 7 days from
- * right now" rail, which is scoped to a rolling window and capped at ~15
- * titles rather than showing the whole week's actual schedule.
+ * viewer's own local time), bucketed by day — a discovery surface for the
+ * whole week's actual schedule, distinct from the "Your shows airing soon"
+ * rail (fetchAiringForIds), which is scoped to your own Watching list.
  * Returns an array of 7 day-buckets, index 0 = Monday, each already sorted
  * by popularity so a packed day still leads with what's worth noticing.
  */

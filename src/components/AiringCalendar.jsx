@@ -10,7 +10,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
  * AiringRail for the actual cards rather than inventing a second card
  * style just to cram seven columns side by side.
  */
-export default function AiringCalendar({ days, onOpen }) {
+export default function AiringCalendar({ days, onOpen, vertical = false }) {
   const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
   const [active, setActive] = useState(todayIndex);
   const items = days[active] || [];
@@ -32,7 +32,7 @@ export default function AiringCalendar({ days, onOpen }) {
         ))}
       </div>
       {items.length > 0 ? (
-        <AiringRail items={items} onOpen={onOpen} />
+        <AiringRail items={items} onOpen={onOpen} vertical={vertical} />
       ) : (
         <p className="num calendar-empty">Nothing scheduled for this day yet.</p>
       )}

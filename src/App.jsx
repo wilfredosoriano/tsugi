@@ -10,7 +10,7 @@ import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
 import AiringCalendar from './components/AiringCalendar.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringSoon, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
@@ -62,9 +62,6 @@ export default function App() {
 
   const [featured, setFeatured] = useState([]);
   const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
-
-  const [airingSoon, setAiringSoon] = useState([]);
-  const [airingSoonState, setAiringSoonState] = useState('loading'); // loading | ready | error
 
   const [myAiringSoon, setMyAiringSoon] = useState([]);
   const [myAiringSoonState, setMyAiringSoonState] = useState('idle'); // idle | loading | ready | error
@@ -136,18 +133,6 @@ export default function App() {
         setFeaturedState('ready');
       })
       .catch(() => setFeaturedState('error'));
-  }, []);
-
-  /* ── homepage "Airing soon": upcoming episodes across ongoing (or
-     about-to-premiere) anime, so users don't have to check each one
-     individually ─────────────────────────────────────────────── */
-  useEffect(() => {
-    fetchAiringSoon(15)
-      .then((items) => {
-        setAiringSoon(items);
-        setAiringSoonState('ready');
-      })
-      .catch(() => setAiringSoonState('error'));
   }, []);
 
   /* ── weekly airing calendar: the whole Mon-Sun schedule, bucketed by
@@ -531,7 +516,7 @@ export default function App() {
       )}
 
       <main className="wrap">
-        {(myAiringSoonState === 'ready' && myAiringSoon.length > 0) || (airingSoonState === 'ready' && airingSoon.length > 0) ? (
+        {(myAiringSoonState === 'ready' && myAiringSoon.length > 0) || (weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0)) ? (
           <aside className="airing-desktop">
             {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
               <div className="airing-block">
@@ -539,10 +524,10 @@ export default function App() {
                 <AiringRail items={myAiringSoon} onOpen={openMedia} vertical />
               </div>
             )}
-            {airingSoonState === 'ready' && airingSoon.length > 0 && (
+            {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
               <div className="airing-block">
-                <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
-                <AiringRail items={airingSoon} onOpen={openMedia} vertical />
+                <SectionHead title="This week" count="by day" />
+                <AiringCalendar days={weeklyAiring} onOpen={openMedia} vertical />
               </div>
             )}
           </aside>
@@ -592,15 +577,8 @@ export default function App() {
           </section>
         )}
 
-        {airingSoonState === 'ready' && airingSoon.length > 0 && (
-          <section className="airing-mobile">
-            <SectionHead title="Airing soon" count={`${airingSoon.length} episodes`} />
-            <AiringRail items={airingSoon} onOpen={openMedia} />
-          </section>
-        )}
-
         {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
-          <section>
+          <section className="airing-mobile">
             <SectionHead title="This week" count="by day" />
             <AiringCalendar days={weeklyAiring} onOpen={openMedia} />
           </section>
