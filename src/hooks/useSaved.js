@@ -112,11 +112,18 @@ export function useSaved(user) {
   const isSaved = useCallback((id) => saved.some((m) => m.id === id), [saved]);
 
   const toggle = useCallback((media) => {
+    // `_why` is Groq's one-sentence justification for a recommendation
+    // card — only meaningful while that result set is on screen, never
+    // real anime data. Dropping it here instead of just at render time
+    // keeps it from bloating every saved item that happened to come from
+    // an AI pick forever.
+    const { _why, ...cleanMedia } = media;
+
     if (user && db) {
       setCloudSaved((prev) => {
         const next = prev.some((m) => m.id === media.id)
           ? prev.filter((m) => m.id !== media.id)
-          : [{ ...media, watchStatus: DEFAULT_WATCH_STATUS }, ...prev];
+          : [{ ...cleanMedia, watchStatus: DEFAULT_WATCH_STATUS }, ...prev];
         setDoc(doc(db, 'users', user.uid), { saved: next, updatedAt: Date.now() }, { merge: true }).catch(() => {});
         return next;
       });
@@ -124,7 +131,7 @@ export function useSaved(user) {
       setLocalSaved((prev) =>
         prev.some((m) => m.id === media.id)
           ? prev.filter((m) => m.id !== media.id)
-          : [{ ...media, watchStatus: DEFAULT_WATCH_STATUS }, ...prev]
+          : [{ ...cleanMedia, watchStatus: DEFAULT_WATCH_STATUS }, ...prev]
       );
     }
   }, [user]);
