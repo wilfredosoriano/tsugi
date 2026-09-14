@@ -334,17 +334,69 @@ function markCore(corePool, filledPool, alwaysCore) {
   return [...filledPool.values()].map((m) => ({ ...m, _core: alwaysCore || coreIds.has(m.id) }));
 }
 
-/** Grounds a natural-language question ("similar to X") in the real catalog. */
+/**
+ * Picks out any genre/demographic/tag names (already known to the app —
+ * same lists the genre pills use) mentioned in free text, case-insensitive
+ * whole-word/phrase matching.
+ */
+function extractGenreHints(question) {
+  const lower = question.toLowerCase();
+  return [...GENRES, ...DEMOGRAPHICS, ...TAG_GENRES].filter((g) => {
+    const escaped = g.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`).test(lower);
+  });
+}
+
+/**
+ * Grounds a plain genre/mood request ("romance and comedy", "give me some
+ * isekai") in AniList's own genre/tag filter — without this, a question
+ * with no "similar to X" title in it fell straight through to broadPool(),
+ * generic top scorers with no relation to the genre actually asked for.
+ * genre_in/tag_in both require ALL listed values present (confirmed
+ * directly against AniList: querying genre_in: ["Romance","Comedy"] only
+ * ever returns titles carrying both, never just one), so combining both
+ * arguments in one query keeps a mixed genre+tag ask ("isekai romance")
+ * precise instead of union-ing two separate, looser pools.
+ */
+async function poolFromGenreHints(hints) {
+  const genreList = hints.filter((g) => !DEMOGRAPHICS.includes(g) && !TAG_GENRES.includes(g));
+  const tagList = hints.filter((g) => DEMOGRAPHICS.includes(g) || TAG_GENRES.includes(g));
+  if (!genreList.length && !tagList.length) return new Map();
+
+  const data = await gql(
+    `query ($genres: [String], $tags: [String]) {
+      Page(page: 1, perPage: 30) {
+        media(type: ANIME, isAdult: false, genre_in: $genres, tag_in: $tags, sort: SCORE_DESC) {
+          ${MEDIA_FIELDS} ${RELATION_CHECK_FIELDS}
+        }
+      }
+    }`,
+    { genres: genreList.length ? genreList : undefined, tags: tagList.length ? tagList : undefined }
+  );
+
+  const pool = new Map();
+  for (const m of data.Page.media) if (hasCover(m) && !isSequel(m)) pool.set(m.id, m);
+  return pool;
+}
+
+/** Grounds a natural-language question ("similar to X", or a plain genre/mood ask) in the real catalog. */
 export async function fetchCandidates(question) {
   const reference = await findReference(question);
-  const corePool = reference ? await poolFromReference(reference.id) : new Map();
-  const pool = new Map(corePool);
+  const genreHints = extractGenreHints(question);
 
+  const corePool = reference ? await poolFromReference(reference.id) : new Map();
+  if (genreHints.length) {
+    for (const [id, m] of await poolFromGenreHints(genreHints)) {
+      if (!corePool.has(id)) corePool.set(id, m);
+    }
+  }
+
+  const pool = new Map(corePool);
   if (pool.size < 14) {
     for (const m of await broadPool()) if (!pool.has(m.id)) pool.set(m.id, m);
   }
 
-  return { reference, pool: markCore(corePool, pool, !reference).slice(0, 40) };
+  return { reference, pool: markCore(corePool, pool, !reference && !genreHints.length).slice(0, 40) };
 }
 
 /**
