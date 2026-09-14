@@ -512,3 +512,61 @@ export function toPromptRows(pool) {
     score: m.averageScore,
   }));
 }
+
+/**
+ * Everything airing this calendar week (Monday through Sunday, in the
+ * viewer's own local time), bucketed by day — a browsing/discovery surface
+ * distinct from fetchAiringSoon's popularity-curated "next 7 days from
+ * right now" rail, which is scoped to a rolling window and capped at ~15
+ * titles rather than showing the whole week's actual schedule.
+ * Returns an array of 7 day-buckets, index 0 = Monday, each already sorted
+ * by popularity so a packed day still leads with what's worth noticing.
+ */
+export async function fetchWeeklyAiring() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() + (day === 0 ? -6 : 1 - day));
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(nextMonday.getDate() + 7);
+
+  const start = Math.floor(monday.getTime() / 1000);
+  const end = Math.floor(nextMonday.getTime() / 1000);
+
+  const schedules = [];
+  let page = 1;
+  let hasNextPage = true;
+  while (hasNextPage && page <= 3) {
+    const data = await gql(
+      `query ($start: Int, $end: Int, $page: Int) {
+        Page(page: $page, perPage: 50) {
+          pageInfo { hasNextPage }
+          airingSchedules(airingAt_greater: $start, airingAt_lesser: $end, sort: TIME) {
+            airingAt
+            episode
+            media { ${MEDIA_FIELDS} }
+          }
+        }
+      }`,
+      { start, end, page }
+    );
+    schedules.push(...data.Page.airingSchedules);
+    hasNextPage = Boolean(data.Page.pageInfo?.hasNextPage);
+    page += 1;
+  }
+
+  const seen = new Set();
+  const byDay = Array.from({ length: 7 }, () => []);
+  for (const s of schedules) {
+    const m = s.media;
+    const dedupeKey = `${m.id}-${s.episode}`;
+    if (!hasCover(m) || m.isAdult || seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    const airedOn = new Date(s.airingAt * 1000);
+    const dayIndex = (airedOn.getDay() + 6) % 7; // Monday=0 ... Sunday=6
+    byDay[dayIndex].push({ media: m, episode: s.episode, airingAt: s.airingAt });
+  }
+
+  return byDay.map((list) => [...list].sort((a, b) => (b.media.popularity || 0) - (a.media.popularity || 0)));
+}

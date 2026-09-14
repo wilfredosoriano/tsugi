@@ -898,6 +898,23 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .progress-num:focus { outline: none; border-color: var(--accent); }
 .progress-total { font-size: 0.8rem; font-weight: 700; color: var(--text-faint); }
 
+/* ── weekly airing calendar ─────────────────────────────────── */
+.calendar-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px;
+  scrollbar-width: none;
+}
+.calendar-tabs::-webkit-scrollbar { display: none; }
+.calendar-tab {
+  position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 700;
+  background: var(--bg-elevated-2); border: 1px solid var(--border); color: var(--text-soft);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.calendar-tab.active { background: var(--accent-gradient); color: #fff; border-color: transparent; }
+.calendar-tab-today { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
+.calendar-tab-count { font-size: 0.72rem; font-weight: 600; opacity: 0.7; }
+.calendar-empty { padding: 12px 2px; }
+
 /* ── list transfer (export/import, no account needed) ─────── */
 .transfer-sheet { max-width: 480px; }
 .transfer-tabs { display: flex; gap: 8px; padding: 14px 22px 0; }
