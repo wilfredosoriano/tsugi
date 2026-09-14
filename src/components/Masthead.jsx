@@ -213,6 +213,7 @@ export default function Masthead({
   const submit = () => {
     setOpen(false);
     onSearch(term.trim());
+    setTerm('');
   };
 
   const pick = (media) => {
@@ -224,6 +225,7 @@ export default function Masthead({
         setOpening(null);
         setOpen(false);
       });
+    setTerm('');
   };
 
   const onKeyDown = (e) => {
