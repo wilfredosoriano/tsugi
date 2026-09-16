@@ -589,8 +589,15 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .ask-row { display: flex; gap: 12px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
 /* Perched on the textarea's own top-right corner, overlapping its border
    by design — last child in the DOM so it paints above the textarea
-   where the two overlap, rather than getting clipped behind it. */
-.ask-mascot { position: absolute; top: 10px; right: 14px; z-index: 1; }
+   where the two overlap, rather than getting clipped behind it.
+   The sprite art itself isn't full-bleed in its cell — most poses leave
+   ~6px of transparent margin at the bottom, but the down-facing poses
+   (shown whenever the pointer sits below-right of it, the common case
+   with a mouse, since the rest of the panel is right there) leave up to
+   30px. `top: 32px` overlaps the border by enough that even those poses
+   still show a few visible pixels past it, instead of just the empty
+   part of the sprite appearing to float above the input. */
+.ask-mascot { position: absolute; top: 32px; right: 14px; z-index: 1; }
 @media (max-width: 520px) { .ask-mascot { top: 8px; right: 10px; transform: scale(0.75); transform-origin: top right; } }
 
 .btn {
