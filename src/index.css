@@ -587,6 +587,11 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .ask-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-wash); }
 .ask-row { display: flex; gap: 12px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+/* Peeking out of the header's own empty space, next to the heading —
+   last child in the DOM so it paints above the textarea wherever the
+   two happen to overlap, rather than getting clipped behind it. */
+.ask-mascot { position: absolute; top: 14px; right: 22px; z-index: 1; }
+@media (max-width: 520px) { .ask-mascot { top: 10px; right: 14px; transform: scale(0.75); transform-origin: top right; } }
 
 .btn {
   position: relative; overflow: hidden; isolation: isolate;
