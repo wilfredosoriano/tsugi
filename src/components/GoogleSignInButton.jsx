@@ -53,8 +53,13 @@ export default function GoogleSignInButton({ onCredential }) {
   }, [onCredential]);
 
   return (
-    <button className="google-btn" onClick={() => clientRef.current?.requestAccessToken()}>
-      <GoogleIcon /> Sign in with Google
+    <button
+      className="google-btn"
+      onClick={() => clientRef.current?.requestAccessToken()}
+      aria-label="Sign in with Google"
+      title="Sign in with Google"
+    >
+      <GoogleIcon /> <span className="google-btn-label">Sign in with Google</span>
     </button>
   );
 }

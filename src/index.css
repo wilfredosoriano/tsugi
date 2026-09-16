@@ -231,6 +231,11 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 @media (max-width: 640px) {
   .account-name { display: none; }
   .account-trigger { padding: 4px; }
+  /* Same collapse as the signed-in avatar above: the full-width pill
+     doesn't fit the header row next to the icon buttons on a phone, so
+     drop to an icon-only circle matching .icon-btn's size. */
+  .google-btn-label { display: none; }
+  .google-btn { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
 }
 
 .account-menu {
@@ -1113,8 +1118,14 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
   }
   .sheet-body { grid-template-columns: 136px 1fr; gap: 16px; }
   .sheet-body .cover { max-width: 136px; }
-  .sheet-head { padding: 14px 56px 0 18px; }
+  .sheet-head { padding: 14px 64px 0 18px; }
   .sheet-head h3 { font-size: 1.2rem; }
+  /* Close hit target up to the 44px guideline (was 38px), and the narrow
+     136px cover column doesn't leave "Want to watch" enough room at the
+     desktop font-size — it wraps to two lines and ends up visibly taller
+     than the single-line Trailer button below it. */
+  .sheet .x { width: 44px; height: 44px; top: 12px; right: 12px; }
+  .sheet-save { padding: 11px 8px; font-size: 0.78rem; gap: 5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
