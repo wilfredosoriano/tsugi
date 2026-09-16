@@ -1,4 +1,3 @@
-import { Mascot } from './Mascot.jsx';
 import { useTypedPlaceholder } from '../hooks/useTypedPlaceholder.js';
 
 const EXAMPLES = [
@@ -48,10 +47,6 @@ export default function AskPanel({ value, onChange, onAsk, busy }) {
             ⌘/Ctrl + Enter
           </span>
         </div>
-      </div>
-
-      <div className="ask-mascot">
-        <Mascot directions="/mascots/fox-directions.png" reactions="/mascots/fox-reactions.png" size={72} label="fox" />
       </div>
     </section>
   );
