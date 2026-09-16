@@ -1,4 +1,4 @@
-import { Mascot } from 'page-mascot';
+import { Mascot } from './Mascot.jsx';
 import { useTypedPlaceholder } from '../hooks/useTypedPlaceholder.js';
 
 const EXAMPLES = [
