@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon, ArrowLeftRight, LogOut, Bell } from 'lucide-react';
+import { Sun, Moon, Repeat, LogOut, Bell } from 'lucide-react';
 import { GENRES, DEMOGRAPHICS, TAG_GENRES, quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
@@ -271,7 +271,7 @@ export default function Masthead({
               aria-label={savedCount > 0 ? 'Move, share, or import your saved list' : 'Import a saved list from another device'}
               title="Move, share, or import your list"
             >
-              <ArrowLeftRight size={16} strokeWidth={2} />
+              <Repeat size={16} strokeWidth={2} />
             </button>
             <button
               className="icon-btn"
