@@ -268,8 +268,8 @@ export default function Masthead({
             <button
               className="icon-btn"
               onClick={onOpenTransfer}
-              aria-label={savedCount > 0 ? 'Move your saved list to another device' : 'Import a saved list from another device'}
-              title="Move list between devices"
+              aria-label={savedCount > 0 ? 'Move, share, or import your saved list' : 'Import a saved list from another device'}
+              title="Move, share, or import your list"
             >
               <ArrowLeftRight size={16} strokeWidth={2} />
             </button>
