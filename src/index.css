@@ -70,14 +70,21 @@ body {
   /* The aura background (PageAura.jsx) is fixed to the viewport, not the
      scrolling page, so any given bit of plain body text — a heading, the
      AI recommendation intro, anything not already sitting on an opaque
-     card — passes over different parts of that gradient as you scroll,
-     including its most saturated stops, where --text's contrast against
-     it can drop well below readable. A soft halo in the page's own base
-     tone (--bg) pulls contrast back toward normal wherever the aura
-     tints the backdrop away from that base color, while staying
-     invisible where text already sits on --bg or an opaque card of a
-     similar shade. */
-  text-shadow: 0 0 8px var(--bg), 0 0 3px var(--bg);
+     card — passes over different parts of that gradient as you scroll.
+     Ocean Pearl's two layers both use multiply, and where they overlap
+     near-solid stops the darkening compounds — light mode's base can
+     end up crushed to near-black there, which a soft blur-only glow
+     isn't dense enough to rescue when the text is *also* dark. The
+     8-direction 1px pass below acts like a thin solid outline (no
+     blur — full opacity right at the glyph edge) so there's always a
+     hard, readable boundary regardless of how dark the backdrop gets;
+     the wider blurred pass softens that outline into a halo everywhere
+     else. Both are invisible where text already sits on --bg or a
+     same-toned opaque card. */
+  text-shadow:
+    1px 0 0 var(--bg), -1px 0 0 var(--bg), 0 1px 0 var(--bg), 0 -1px 0 var(--bg),
+    1px 1px 0 var(--bg), -1px -1px 0 var(--bg), 1px -1px 0 var(--bg), -1px 1px 0 var(--bg),
+    0 0 8px var(--bg), 0 0 4px var(--bg);
 }
 /* ── aura background ────────────────────────────────────────
    Dark ("Nightfall"): three blend-mode gradient layers plus a
@@ -196,14 +203,6 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 :root[data-theme='light'] .masthead {
   background: rgba(250, 248, 242, 0.45);
-}
-/* Sticky headers sit flush against whatever content scrolls up to meet them —
-   this fade softens that hard edge instead of letting cards butt right up
-   against the genre pills. */
-.masthead::after {
-  content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 14px;
-  background: linear-gradient(to bottom, var(--bg), transparent);
-  pointer-events: none;
 }
 .mast { display: flex; align-items: center; gap: 14px; padding: 14px 0 12px; }
 .logo { display: flex; align-items: baseline; gap: 8px; }
