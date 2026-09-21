@@ -69,34 +69,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 /* ── aura background ────────────────────────────────────────
-   Dark ("Nightfall"): three blend-mode gradient layers plus a
+   Dark ("Abyssal Floor"): two screen-blend gradient layers plus a
    film-grain overlay. Light ("Ocean Pearl"): two multiply layers with
-   entirely different gradients — screen/soft-light/overlay all wash
-   out to nothing over a light backdrop, so the light variant isn't
-   just a recolor. Fixed to the viewport (not the scrolling document)
-   and rendered first in the DOM, so plain stacking order keeps it
-   behind every real element without needing a z-index. See
-   PageAura.jsx. The base color these blend against is `--bg` on body,
-   not a background on the layers themselves — that's what the blend
-   modes composite into. */
+   entirely different gradients — screen washes out to nothing over a
+   light backdrop, so the light variant isn't just a recolor. Fixed to
+   the viewport (not the scrolling document) and rendered first in the
+   DOM, so plain stacking order keeps it behind every real element
+   without needing a z-index. See PageAura.jsx. The base color these
+   blend against is `--bg` on body, not a background on the layers
+   themselves — that's what the blend modes composite into. */
 .aura-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 .aura-layer { position: absolute; inset: 0; transform: translateZ(0); will-change: transform; }
 
 .aura-layer-1 {
-  background: radial-gradient(85% 55% at 52% 0%, rgba(35, 70, 105, 0.34) 0%, rgba(24, 49, 74, 0.18) 38%, transparent 76%);
+  background: radial-gradient(ellipse 120% 70% at 50% 110%, rgba(0, 90, 110, 0.8) 0%, rgba(0, 45, 60, 0.5) 40%, rgba(0, 0, 0, 0) 75%);
   mix-blend-mode: screen;
-  filter: blur(36px);
+  filter: blur(180px);
 }
 .aura-layer-2 {
-  background: linear-gradient(180deg, rgba(54, 88, 120, 0.16) 0%, transparent 45%, rgba(0, 0, 0, 0.18) 100%);
-  mix-blend-mode: soft-light;
-  filter: blur(36px);
-  opacity: 0.9;
-}
-.aura-layer-3 {
-  background: radial-gradient(42% 35% at 78% 16%, rgba(96, 130, 155, 0.16) 0%, transparent 78%);
+  background: linear-gradient(to top, rgba(0, 130, 150, 0.25) 0%, rgba(0, 0, 0, 0) 35%);
   mix-blend-mode: screen;
-  filter: blur(36px);
+  filter: blur(72px);
 }
 /* baseFrequency is in cycles per SVG user-unit, and without a viewBox a
    user-unit is just however many CSS pixels the SVG itself is rendered
@@ -137,13 +130,11 @@ body {
   filter: blur(130px);
   opacity: 0.45;
 }
-:root[data-theme='light'] .aura-layer-3,
 :root[data-theme='light'] .aura-grain { display: none; }
 
 @media (max-width: 720px) {
-  .aura-layer-1,
-  .aura-layer-2,
-  .aura-layer-3 { filter: blur(25px); }
+  .aura-layer-1 { filter: blur(125px); }
+  .aura-layer-2 { filter: blur(50px); }
   :root[data-theme='light'] .aura-layer-1,
   :root[data-theme='light'] .aura-layer-2 { filter: blur(90px); }
 }
