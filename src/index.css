@@ -180,13 +180,12 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   border-bottom: 1px solid var(--border);
-  transition: box-shadow var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
+  transition: background var(--dur-2) var(--ease);
   padding-top: env(safe-area-inset-top);
 }
 :root[data-theme='light'] .masthead {
   background: rgba(250, 248, 242, 0.45);
 }
-.masthead.scrolled { box-shadow: var(--shadow); }
 /* Sticky headers sit flush against whatever content scrolls up to meet them —
    this fade softens that hard edge instead of letting cards butt right up
    against the genre pills. */

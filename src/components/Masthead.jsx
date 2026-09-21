@@ -23,7 +23,6 @@ export default function Masthead({
   user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
-  const [scrolled, setScrolled] = useState(false);
 
   // Picking a genre clears the active search (see App.jsx) — mirror that
   // here so the box itself empties too, instead of leaving stale text
@@ -114,13 +113,6 @@ export default function Masthead({
       dragRef.current.moved = false;
     }
   };
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   // "/" jumps to search, like GitHub/Slack — skipped while already typing
   // anywhere else, so it never hijacks a literal "/" character.
@@ -256,7 +248,7 @@ export default function Masthead({
   const showDropdown = open && term.trim().length >= MIN_CHARS;
 
   return (
-    <header className={`masthead${scrolled ? ' scrolled' : ''}`}>
+    <header className="masthead">
       <div className="wrap">
         <div className="mast">
           <div className="logo">
