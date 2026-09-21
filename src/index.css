@@ -405,9 +405,16 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 /* ── genre rail ─────────────────────────────────────────── */
 .rail-wrap { position: relative; }
+/* Fades to the masthead's own translucent tint, not a solid --bg — the
+   header background is semi-opaque + blurred now (see .masthead), so
+   fading to a fully-opaque color here would paint a solid patch that
+   doesn't match the rest of the translucent header around it. */
 .rail-wrap::after {
   content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
-  pointer-events: none; background: linear-gradient(to right, transparent, var(--bg));
+  pointer-events: none; background: linear-gradient(to right, transparent, rgba(16, 14, 11, 0.4));
+}
+:root[data-theme='light'] .rail-wrap::after {
+  background: linear-gradient(to right, transparent, rgba(250, 248, 242, 0.45));
 }
 .rail {
   position: relative;
