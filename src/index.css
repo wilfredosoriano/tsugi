@@ -71,35 +71,34 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 /* ── aura background ────────────────────────────────────────
-   Dark ("Deep Current"): three blend-mode gradient layers plus a
+   Dark ("Nightfall"): three blend-mode gradient layers plus a
    film-grain overlay. Light ("Ocean Pearl"): two multiply layers with
-   entirely different gradients — screen/overlay both wash out to
-   nothing over a light backdrop, so the light variant isn't just a
-   recolor. Fixed to the viewport (not the scrolling document) and
-   rendered first in the DOM, so plain stacking order keeps it behind
-   every real element without needing a z-index. See PageAura.jsx. The
-   base color these blend against is `--bg` on body, not a background
-   on the layers themselves — that's what the blend modes composite
-   into. */
+   entirely different gradients — screen/soft-light/overlay all wash
+   out to nothing over a light backdrop, so the light variant isn't
+   just a recolor. Fixed to the viewport (not the scrolling document)
+   and rendered first in the DOM, so plain stacking order keeps it
+   behind every real element without needing a z-index. See
+   PageAura.jsx. The base color these blend against is `--bg` on body,
+   not a background on the layers themselves — that's what the blend
+   modes composite into. */
 .aura-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 .aura-layer { position: absolute; inset: 0; transform: translateZ(0); will-change: transform; }
 
 .aura-layer-1 {
-  background: linear-gradient(90deg, transparent 0%, rgba(16, 58, 58, 0.12) 24%, rgba(24, 105, 103, 0.34) 52%, rgba(18, 74, 73, 0.18) 72%, transparent 100%);
+  background: radial-gradient(85% 55% at 52% 0%, rgba(35, 70, 105, 0.34) 0%, rgba(24, 49, 74, 0.18) 38%, transparent 76%);
   mix-blend-mode: screen;
-  filter: blur(234px);
+  filter: blur(36px);
 }
 .aura-layer-2 {
-  background: radial-gradient(70% 28% at 54% 62%, rgba(34, 124, 120, 0.28) 0%, rgba(20, 68, 67, 0.13) 48%, transparent 82%);
-  mix-blend-mode: screen;
-  filter: blur(173px);
+  background: linear-gradient(180deg, rgba(54, 88, 120, 0.16) 0%, transparent 45%, rgba(0, 0, 0, 0.18) 100%);
+  mix-blend-mode: soft-light;
+  filter: blur(36px);
   opacity: 0.9;
 }
 .aura-layer-3 {
-  background: linear-gradient(90deg, transparent 30%, rgba(75, 158, 153, 0.08) 52%, transparent 72%);
-  mix-blend-mode: overlay;
-  filter: blur(86px);
-  opacity: 0.7;
+  background: radial-gradient(42% 35% at 78% 16%, rgba(96, 130, 155, 0.16) 0%, transparent 78%);
+  mix-blend-mode: screen;
+  filter: blur(36px);
 }
 .aura-grain { position: absolute; inset: 0; mix-blend-mode: overlay; opacity: 0.85; }
 
@@ -119,9 +118,9 @@ body {
 :root[data-theme='light'] .aura-grain { display: none; }
 
 @media (max-width: 720px) {
-  .aura-layer-1 { filter: blur(163px); }
-  .aura-layer-2 { filter: blur(120px); }
-  .aura-layer-3 { filter: blur(60px); }
+  .aura-layer-1,
+  .aura-layer-2,
+  .aura-layer-3 { filter: blur(25px); }
   :root[data-theme='light'] .aura-layer-1,
   :root[data-theme='light'] .aura-layer-2 { filter: blur(90px); }
 }
