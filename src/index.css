@@ -67,6 +67,17 @@ body {
   line-height: 1.5;
   transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
   -webkit-font-smoothing: antialiased;
+  /* The aura background (PageAura.jsx) is fixed to the viewport, not the
+     scrolling page, so any given bit of plain body text — a heading, the
+     AI recommendation intro, anything not already sitting on an opaque
+     card — passes over different parts of that gradient as you scroll,
+     including its most saturated stops, where --text's contrast against
+     it can drop well below readable. A soft halo in the page's own base
+     tone (--bg) pulls contrast back toward normal wherever the aura
+     tints the backdrop away from that base color, while staying
+     invisible where text already sits on --bg or an opaque card of a
+     similar shade. */
+  text-shadow: 0 0 8px var(--bg), 0 0 3px var(--bg);
 }
 /* ── aura background ────────────────────────────────────────
    Dark ("Nightfall"): three blend-mode gradient layers plus a
