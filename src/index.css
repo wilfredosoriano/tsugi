@@ -6,7 +6,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #0a0a0f;
+  --bg: #100e0b;
   --bg-elevated: #16161d;
   --bg-elevated-2: #202028;
   --glass: rgba(14, 14, 19, 0.96);
@@ -38,7 +38,7 @@
 }
 
 :root[data-theme='light'] {
-  --bg: #f4f4f8;
+  --bg: #faf8f2;
   --bg-elevated: #ffffff;
   --bg-elevated-2: #ececf3;
   --glass: rgba(250, 250, 252, 0.96);
@@ -70,38 +70,60 @@ body {
   transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
   -webkit-font-smoothing: antialiased;
 }
-:root[data-theme='light'] body {
-  background:
-    radial-gradient(900px 480px at 12% -8%, var(--accent-wash), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
+/* ── aura background ────────────────────────────────────────
+   Dark ("Deep Current"): three blend-mode gradient layers plus a
+   film-grain overlay. Light ("Ocean Pearl"): two multiply layers with
+   entirely different gradients — screen/overlay both wash out to
+   nothing over a light backdrop, so the light variant isn't just a
+   recolor. Fixed to the viewport (not the scrolling document) and
+   rendered first in the DOM, so plain stacking order keeps it behind
+   every real element without needing a z-index. See PageAura.jsx. The
+   base color these blend against is `--bg` on body, not a background
+   on the layers themselves — that's what the blend modes composite
+   into. */
+.aura-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.aura-layer { position: absolute; inset: 0; transform: translateZ(0); will-change: transform; }
+
+.aura-layer-1 {
+  background: linear-gradient(90deg, transparent 0%, rgba(16, 58, 58, 0.12) 24%, rgba(24, 105, 103, 0.34) 52%, rgba(18, 74, 73, 0.18) 72%, transparent 100%);
+  mix-blend-mode: screen;
+  filter: blur(234px);
 }
-/* Dark mode's answer to that static wash: a soft blurred blob tinted with
-   whatever title the hero is currently showing (AniList's own precomputed
-   coverImage.color — see Hero's effect that sets --hero-glow), instead of
-   a fixed purple that never changes. Hidden in light mode. */
-body::before {
-  content: '';
-  position: fixed;
-  top: -12%; left: 6%;
-  width: 640px; height: 480px;
-  max-width: 70vw; max-height: 55vh;
-  border-radius: 50%;
-  background-color: var(--hero-glow, transparent);
+.aura-layer-2 {
+  background: radial-gradient(70% 28% at 54% 62%, rgba(34, 124, 120, 0.28) 0%, rgba(20, 68, 67, 0.13) 48%, transparent 82%);
+  mix-blend-mode: screen;
+  filter: blur(173px);
+  opacity: 0.9;
+}
+.aura-layer-3 {
+  background: linear-gradient(90deg, transparent 30%, rgba(75, 158, 153, 0.08) 52%, transparent 72%);
+  mix-blend-mode: overlay;
+  filter: blur(86px);
+  opacity: 0.7;
+}
+.aura-grain { position: absolute; inset: 0; mix-blend-mode: overlay; opacity: 0.85; }
+
+:root[data-theme='light'] .aura-layer-1 {
+  background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.12) 28%, rgb(255, 255, 255) 18%, rgb(77, 182, 200) 68%, rgb(45, 100, 130) 100%);
+  mix-blend-mode: multiply;
   filter: blur(130px);
-  opacity: 0.4;
-  pointer-events: none;
-  transition: opacity 1s var(--ease), background-color 1.4s var(--ease);
+  opacity: 1;
 }
-:root[data-theme='light'] body::before { opacity: 0; }
-/* `left: 6%` is 6% of the raw viewport — fine on mobile, where content
-   fills the whole width, but on a desktop window wider than .wrap's
-   1280px content column, that same 6% drifts into the empty margin
-   beside the (centered) content instead of tracking where the hero
-   actually sits. Above that width, anchor to the content column's own
-   left edge instead of the viewport's. */
-@media (min-width: 1280px) {
-  body::before { left: calc(50% - 563px); }
+:root[data-theme='light'] .aura-layer-2 {
+  background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.22) 34%, rgb(255, 255, 255) 66%, rgb(77, 182, 200) 82%, rgb(45, 100, 130) 100%);
+  mix-blend-mode: multiply;
+  filter: blur(130px);
+  opacity: 1;
+}
+:root[data-theme='light'] .aura-layer-3,
+:root[data-theme='light'] .aura-grain { display: none; }
+
+@media (max-width: 720px) {
+  .aura-layer-1 { filter: blur(163px); }
+  .aura-layer-2 { filter: blur(120px); }
+  .aura-layer-3 { filter: blur(60px); }
+  :root[data-theme='light'] .aura-layer-1,
+  :root[data-theme='light'] .aura-layer-2 { filter: blur(90px); }
 }
 
 ::selection { background: var(--accent); color: #fff; }
