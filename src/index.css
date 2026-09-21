@@ -67,24 +67,6 @@ body {
   line-height: 1.5;
   transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
   -webkit-font-smoothing: antialiased;
-  /* The aura background (PageAura.jsx) is fixed to the viewport, not the
-     scrolling page, so any given bit of plain body text — a heading, the
-     AI recommendation intro, anything not already sitting on an opaque
-     card — passes over different parts of that gradient as you scroll.
-     Ocean Pearl's two layers both use multiply, and where they overlap
-     near-solid stops the darkening compounds — light mode's base can
-     end up crushed to near-black there, which a soft blur-only glow
-     isn't dense enough to rescue when the text is *also* dark. The
-     8-direction 1px pass below acts like a thin solid outline (no
-     blur — full opacity right at the glyph edge) so there's always a
-     hard, readable boundary regardless of how dark the backdrop gets;
-     the wider blurred pass softens that outline into a halo everywhere
-     else. Both are invisible where text already sits on --bg or a
-     same-toned opaque card. */
-  text-shadow:
-    1px 0 0 var(--bg), -1px 0 0 var(--bg), 0 1px 0 var(--bg), 0 -1px 0 var(--bg),
-    1px 1px 0 var(--bg), -1px -1px 0 var(--bg), 1px -1px 0 var(--bg), -1px 1px 0 var(--bg),
-    0 0 8px var(--bg), 0 0 4px var(--bg);
 }
 /* ── aura background ────────────────────────────────────────
    Dark ("Nightfall"): three blend-mode gradient layers plus a
@@ -134,17 +116,26 @@ body {
   background-size: 240px 240px;
 }
 
+/* Both layers use multiply, and both ramp to the same fully-opaque
+   rgb(45,100,130) at their 100% stop — stacked, that's two full
+   multiply passes over the same region, which compounds far darker
+   than either layer alone (worked out to near-black in spots, crushing
+   any plain page text sitting there — no text-shadow trick can rescue
+   contrast that low). opacity: 0.45 on both caps how much of that
+   darkening actually lands, so the deepest point stays a readable
+   mid-tone teal instead of collapsing toward black, while keeping the
+   same gradient shape/hue. */
 :root[data-theme='light'] .aura-layer-1 {
   background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.12) 28%, rgb(255, 255, 255) 18%, rgb(77, 182, 200) 68%, rgb(45, 100, 130) 100%);
   mix-blend-mode: multiply;
   filter: blur(130px);
-  opacity: 1;
+  opacity: 0.45;
 }
 :root[data-theme='light'] .aura-layer-2 {
   background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.22) 34%, rgb(255, 255, 255) 66%, rgb(77, 182, 200) 82%, rgb(45, 100, 130) 100%);
   mix-blend-mode: multiply;
   filter: blur(130px);
-  opacity: 1;
+  opacity: 0.45;
 }
 :root[data-theme='light'] .aura-layer-3,
 :root[data-theme='light'] .aura-grain { display: none; }
@@ -197,7 +188,6 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   background: rgba(16, 14, 11, 0.4);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border-bottom: 1px solid var(--border);
   transition: background var(--dur-2) var(--ease);
   padding-top: env(safe-area-inset-top);
 }
@@ -871,7 +861,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .stars { color: var(--gold); font-size: 0.82rem; letter-spacing: 0.03em; }
 .num { font-size: 0.74rem; color: var(--text-faint); font-weight: 500; }
 .caption {
-  font-size: 0.85rem; line-height: 1.4; color: var(--text-soft);
+  font-size: 0.85rem; line-height: 1.4; color: var(--text);
   border-top: 1px solid var(--border); padding-top: 8px;
 }
 
