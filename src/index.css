@@ -173,22 +173,21 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 /* Translucent + blurred rather than a solid fill, so the aura
    background (see PageAura.jsx) still shows — softened and darkened by
    the blur/tint enough to keep the header's own text and buttons
-   legible over whatever scrolls underneath. */
-/* backdrop-filter's blur amount cuts off instantly at the element's own
-   edge — 20px blur one pixel, 0px blur the next — which a color overlay
-   can't fix (an overlay only masks a mismatched tint, it doesn't make
-   the underlying blur itself taper off). A mask on the header's own
-   alpha feathers the whole effect — blur, saturate and tint together —
-   down to nothing over the last 20px, so whatever's scrolling
-   underneath comes into focus gradually instead of snapping into focus
-   right at the header's bottom edge. */
+   legible over whatever scrolls underneath.
+
+   Tried masking the header's own alpha to taper the blur off at its
+   bottom edge (backdrop-filter cuts off instantly otherwise) — reverted
+   it: masking an element that also has backdrop-filter triggers a real
+   compositing bug in at least Chromium, rendering part of the header's
+   content (a pill near the mask's transition zone) as a flat, totally
+   unblurred box instead of blending it in. That artifact is worse than
+   the hard cutoff it was meant to soften, so back to a plain edge for
+   now. */
 .masthead {
   position: sticky; top: 0; z-index: 40;
   background: rgba(16, 14, 11, 0.4);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent 100%);
-  mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent 100%);
   transition: background var(--dur-2) var(--ease);
   padding-top: env(safe-area-inset-top);
 }
