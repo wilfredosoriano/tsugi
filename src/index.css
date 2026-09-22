@@ -1009,10 +1009,20 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .related-tag {
   position: absolute; top: 6px; left: 6px; z-index: 1;
-  background: var(--accent-gradient); color: #fff;
+  /* A solid dark shade rather than the multi-stop accent-gradient — this
+     badge is too small for the gradient to actually transition across,
+     so it was rendering as a flat sample of whatever stop happened to
+     land there, sometimes the lightest one. */
+  background: var(--accent-deep);
   font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
   padding: 3px 7px; border-radius: 999px;
 }
+/* .related-item span (below) is more specific than a bare .related-tag
+   (it carries the parent class too), so it was winning the cascade and
+   overriding this badge's text to --text-soft regardless of source
+   order — the real reason the badge read as barely legible, not the
+   gradient. Matching that specificity here to actually win. */
+.related-item .related-tag { color: #fff; }
 @media (hover: hover) and (pointer: fine) {
   .related-item:hover img { transform: translateY(-3px); }
 }
