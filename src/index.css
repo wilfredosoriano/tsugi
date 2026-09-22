@@ -447,7 +447,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   position: relative; z-index: 1;
   padding: 9px 16px; white-space: nowrap; border-radius: 999px;
   font-weight: 600; font-size: 0.84rem;
-  background: transparent; border: 1px solid var(--border); color: var(--text-soft);
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
   transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
 }
 .rail button:hover { border-color: var(--accent); color: var(--text); }
