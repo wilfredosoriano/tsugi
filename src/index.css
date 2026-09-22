@@ -441,7 +441,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   border-radius: 999px; background: var(--accent-gradient);
   transition: transform var(--dur-2) var(--ease), width var(--dur-2) var(--ease), height var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease);
 }
-.rail button, .rail a {
+.rail button {
   position: relative; z-index: 1;
   padding: 9px 16px; white-space: nowrap; border-radius: 999px;
   font-weight: 600; font-size: 0.84rem;
@@ -453,13 +453,6 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .rail button[aria-pressed='true'] {
   background: transparent; color: #fff; border-color: transparent;
 }
-.rail-saved {
-  margin-left: 4px; display: flex; align-items: center; gap: 7px;
-  color: var(--accent-strong); border-color: var(--accent-wash) !important; background: var(--accent-wash) !important;
-}
-.rail-saved .num { color: inherit; font-weight: 800; }
-.rail-saved:hover { border-color: var(--accent) !important; }
-
 /* ── hero ───────────────────────────────────────────────── */
 /* Sits inside .wrap (not full-bleed) so it reads as a card like the rest
    of the app, instead of a giant banner spanning the whole viewport on
@@ -1145,7 +1138,7 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
   .ask-body { padding: 14px 16px 16px; }
   .ask-body textarea { font-size: 16px; }
   .btn, .searchbar button { min-height: 44px; }
-  .rail button, .rail a { min-height: 40px; display: flex; align-items: center; }
+  .rail button { min-height: 40px; display: flex; align-items: center; }
 
   .scrim { align-items: flex-end; padding: 0; }
   .sheet {

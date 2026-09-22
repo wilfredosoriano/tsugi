@@ -475,11 +475,6 @@ export default function Masthead({
               {g}
             </button>
           ))}
-          {savedCount > 0 && (
-            <a className="rail-saved" href="#saved">
-              Want-to-watch <span className="num">{savedCount}</span>
-            </a>
-          )}
         </nav>
       </div>
     </header>
