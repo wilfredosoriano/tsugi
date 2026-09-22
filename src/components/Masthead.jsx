@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Sun, Moon, Repeat, LogOut, Bell } from 'lucide-react';
-import { GENRES, DEMOGRAPHICS, TAG_GENRES, quickSearch, fetchById } from '../lib/anilist.js';
+import { useEffect, useRef, useState } from 'react';
+import { Sun, Moon, Repeat, LogOut, Bell, SlidersHorizontal } from 'lucide-react';
+import { quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
@@ -19,7 +19,7 @@ function loadSeen() {
 }
 
 export default function Masthead({
-  activeGenre, search, onGenre, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
+  activeGenres, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, onOpenGenrePicker,
   user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
@@ -38,81 +38,14 @@ export default function Masthead({
   const [opening, setOpening] = useState(null); // id currently being fetched for detail
 
   const wrapRef = useRef(null);
-  const railRef = useRef(null);
   const searchInputRef = useRef(null);
   const requestId = useRef(0);
   const debounceRef = useRef(null);
-  const dragRef = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
-  const [dragging, setDragging] = useState(false);
-  const pillRefs = useRef({});
-  const [indicator, setIndicator] = useState(null); // { left, top, width, height }
   const accountRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const bellRef = useRef(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [seen, setSeen] = useState(loadSeen);
-
-  // Slides/resizes a shared pill behind the active button instead of each
-  // button instantly swapping its own background — measured off the real
-  // DOM node so it's exact regardless of label length or font metrics.
-  // useLayoutEffect (not useEffect) so the very first paint already has the
-  // right position — nothing to visibly animate in from on mount.
-  useLayoutEffect(() => {
-    const btn = pillRefs.current[activeGenre ?? '__all__'];
-    if (!btn) return;
-    setIndicator({ left: btn.offsetLeft, top: btn.offsetTop, width: btn.offsetWidth, height: btn.offsetHeight });
-  }, [activeGenre]);
-
-  // A plain mouse wheel doesn't scroll a horizontal row by default (only
-  // touch swipe / trackpad horizontal gestures do) — and the scrollbar is
-  // hidden for a cleaner look, so there'd be no way to reach it otherwise.
-  // scrollBy (rather than a direct scrollLeft assignment) respects the
-  // row's CSS scroll-behavior: smooth, so each wheel tick eases in.
-  const onRailWheel = (e) => {
-    const el = railRef.current;
-    if (!el || el.scrollWidth <= el.clientWidth) return;
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-      el.scrollBy({ left: e.deltaY, behavior: 'smooth' });
-      e.preventDefault();
-    }
-  };
-
-  // Click-and-drag with the mouse — the other thing people instinctively try.
-  const onRailMouseDown = (e) => {
-    const el = railRef.current;
-    if (!el) return;
-    dragRef.current = { active: true, startX: e.clientX, startScroll: el.scrollLeft, moved: false };
-  };
-
-  useEffect(() => {
-    const onMove = (e) => {
-      const st = dragRef.current;
-      const el = railRef.current;
-      if (!st.active || !el) return;
-      const dx = e.clientX - st.startX;
-      if (!st.moved && Math.abs(dx) > 4) { st.moved = true; setDragging(true); }
-      if (st.moved) el.scrollLeft = st.startScroll - dx;
-    };
-    const onUp = () => {
-      dragRef.current.active = false;
-      setDragging(false);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, []);
-
-  // A drag that actually moved the row shouldn't also fire the pill's click.
-  const onRailClickCapture = (e) => {
-    if (dragRef.current.moved) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragRef.current.moved = false;
-    }
-  };
 
   // "/" jumps to search, like GitHub/Slack — skipped while already typing
   // anywhere else, so it never hijacks a literal "/" character.
@@ -420,62 +353,16 @@ export default function Masthead({
         </div>
       </div>
 
-      <div className="rail-wrap">
-        <nav
-          className={`rail wrap${dragging ? ' dragging' : ''}`}
-          aria-label="Browse by genre"
-          ref={railRef}
-          onWheel={onRailWheel}
-          onMouseDown={onRailMouseDown}
-          onClickCapture={onRailClickCapture}
+      <div className="wrap genre-trigger-wrap">
+        <button
+          className="genre-trigger"
+          onClick={onOpenGenrePicker}
+          aria-haspopup="true"
         >
-          <span
-            className="rail-indicator"
-            aria-hidden="true"
-            style={indicator ? {
-              transform: `translate(${indicator.left}px, ${indicator.top}px)`,
-              width: indicator.width,
-              height: indicator.height,
-            } : { opacity: 0 }}
-          />
-          <button
-            ref={(el) => (pillRefs.current.__all__ = el)}
-            aria-pressed={activeGenre === null}
-            onClick={() => onGenre(null)}
-          >
-            Trending
-          </button>
-          {GENRES.map((g) => (
-            <button
-              key={g}
-              ref={(el) => (pillRefs.current[g] = el)}
-              aria-pressed={activeGenre === g}
-              onClick={() => onGenre(g)}
-            >
-              {g}
-            </button>
-          ))}
-          {DEMOGRAPHICS.map((g) => (
-            <button
-              key={g}
-              ref={(el) => (pillRefs.current[g] = el)}
-              aria-pressed={activeGenre === g}
-              onClick={() => onGenre(g)}
-            >
-              {g}
-            </button>
-          ))}
-          {TAG_GENRES.map((g) => (
-            <button
-              key={g}
-              ref={(el) => (pillRefs.current[g] = el)}
-              aria-pressed={activeGenre === g}
-              onClick={() => onGenre(g)}
-            >
-              {g}
-            </button>
-          ))}
-        </nav>
+          <SlidersHorizontal size={14} strokeWidth={2.25} />
+          {activeGenres.length ? activeGenres.join(', ') : 'Genres'}
+          {activeGenres.length > 0 && <span className="genre-trigger-count">{activeGenres.length}</span>}
+        </button>
       </div>
     </header>
   );

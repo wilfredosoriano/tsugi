@@ -409,48 +409,63 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .live-search-all:hover { background: var(--bg-elevated-2); }
 
-/* ── genre rail ─────────────────────────────────────────── */
-.rail-wrap { position: relative; }
-/* Fades to the masthead's own translucent tint, not a solid --bg — the
-   header background is semi-opaque + blurred now (see .masthead), so
-   fading to a fully-opaque color here would paint a solid patch that
-   doesn't match the rest of the translucent header around it. */
-.rail-wrap::after {
-  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
-  pointer-events: none; background: linear-gradient(to right, transparent, rgba(16, 14, 11, 0.4));
-}
-:root[data-theme='light'] .rail-wrap::after {
-  background: linear-gradient(to right, transparent, rgba(250, 248, 242, 0.45));
-}
-.rail {
-  position: relative;
-  display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 14px;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  cursor: grab;
-}
-.rail::-webkit-scrollbar { display: none; }
-.rail.dragging { cursor: grabbing; user-select: none; scroll-snap-type: none; }
-.rail.dragging button { pointer-events: none; }
-/* A single pill that slides/resizes to the active button's own measured
-   position instead of each button instantly swapping its background. */
-.rail-indicator {
-  position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none;
-  border-radius: 999px; background: var(--accent-gradient);
-  transition: transform var(--dur-2) var(--ease), width var(--dur-2) var(--ease), height var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease);
-}
-.rail button {
-  position: relative; z-index: 1;
-  padding: 9px 16px; white-space: nowrap; border-radius: 999px;
+/* ── genre filter: trigger button + picker modal ───────────── */
+/* padding-bottom only (not shorthand) — this element also carries the
+   .wrap class for its own left/right padding, and a padding shorthand
+   here would silently zero that out since both rules have equal
+   specificity and this one comes later in the cascade. */
+.genre-trigger-wrap { padding-bottom: 14px; }
+.genre-trigger {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+  padding: 9px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-weight: 600; font-size: 0.84rem;
   background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
-  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
 }
-.rail button:hover { border-color: var(--accent); color: var(--text); }
-.rail button:active { transform: scale(0.95); }
-.rail button[aria-pressed='true'] {
-  background: transparent; color: #fff; border-color: transparent;
+.genre-trigger:hover { border-color: var(--accent); color: var(--text); }
+.genre-trigger-count {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent-gradient); color: #fff; font-size: 0.7rem; font-weight: 800;
 }
+
+.genre-picker { max-width: 560px; }
+.genre-picker-body { padding: 4px 22px 0; max-height: 60vh; overflow-y: auto; }
+.genre-picker-search {
+  width: 100%; padding: 10px 14px; margin: 14px 0; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-elevated-2); color: var(--text);
+  font-size: 0.9rem; outline: none;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.genre-picker-search:focus { border-color: var(--accent); }
+.genre-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;
+  padding-bottom: 18px;
+}
+.genre-tile {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated);
+  text-align: left;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.genre-tile:hover { border-color: var(--accent); transform: translateY(-1px); }
+.genre-tile.active { border-color: var(--accent); background: var(--accent-wash); }
+.genre-tile-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: var(--radius-sm); color: #fff;
+}
+.genre-tile-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.genre-tile-check { position: absolute; top: 10px; right: 10px; color: var(--accent-strong); }
+.genre-picker-empty { grid-column: 1 / -1; padding: 20px 0; text-align: center; }
+
+.genre-picker-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 22px; border-top: 1px solid var(--border);
+}
+.genre-picker-clear { font-size: 0.85rem; font-weight: 600; color: var(--text-soft); }
+.genre-picker-clear:hover:not(:disabled) { color: var(--text); }
+.genre-picker-clear:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* ── hero ───────────────────────────────────────────────── */
 /* Sits inside .wrap (not full-bleed) so it reads as a card like the rest
    of the app, instead of a giant banner spanning the whole viewport on
@@ -658,7 +673,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 /* ── section heads ──────────────────────────────────────── */
 /* Offsets scrollIntoView so the sticky masthead (logo + search + genre
-   rail, ~195px tall) doesn't land on top of the section it scrolls to. */
+   trigger, ~192px tall) doesn't land on top of the section it scrolls to. */
 .grid-scroll-anchor { scroll-margin-top: 205px; }
 
 .sec {
@@ -1133,9 +1148,9 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
 
 /* ── mobile ─────────────────────────────────────────────── */
 @media (max-width: 720px) {
-  /* left/right only — .rail also carries the .wrap class, and a `padding: 0
-     14px` shorthand here would zero out the top/bottom padding .rail sets
-     for its own breathing room, since this rule comes later in the cascade. */
+  /* left/right only — several elements also carry the .wrap class for
+     their own top/bottom padding (see .genre-trigger-wrap), and a
+     padding shorthand here would silently zero that out. */
   .wrap { padding-left: 14px; padding-right: 14px; }
   .grid { grid-template-columns: repeat(2, 1fr); gap: 14px 12px; }
   .sec { margin: 28px 0 14px; }
@@ -1145,8 +1160,7 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
   .ask-head { padding: 16px 16px 0; }
   .ask-body { padding: 14px 16px 16px; }
   .ask-body textarea { font-size: 16px; }
-  .btn, .searchbar button { min-height: 44px; }
-  .rail button { min-height: 40px; display: flex; align-items: center; }
+  .btn, .searchbar button, .genre-trigger { min-height: 44px; }
 
   .scrim { align-items: flex-end; padding: 0; }
   .sheet {
@@ -1172,5 +1186,4 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .rail { scroll-behavior: auto; }
 }

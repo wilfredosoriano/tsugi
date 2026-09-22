@@ -6,6 +6,7 @@ import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ListTransfer from './components/ListTransfer.jsx';
+import GenrePicker from './components/GenrePicker.jsx';
 import CompletedHistory from './components/CompletedHistory.jsx';
 import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
@@ -27,9 +28,10 @@ const SORT_VALUES = new Set(SORTS.map((s) => s.value));
 function readUrlState() {
   const params = new URLSearchParams(window.location.search);
   const sort = params.get('sort');
+  const genreParam = params.get('genre');
   return {
     search: params.get('search') || '',
-    genre: params.get('genre') || null,
+    genres: genreParam ? genreParam.split(',').filter(Boolean) : [],
     sort: sort && SORT_VALUES.has(sort) ? sort : 'TRENDING_DESC',
     id: params.get('id'),
   };
@@ -41,9 +43,9 @@ export default function App() {
   const historyOpenId = useRef(initialUrl.id ? Number(initialUrl.id) : null);
   const gridSectionRef = useRef(null);
   const answerSectionRef = useRef(null);
-  const prevFilter = useRef({ genre: initialUrl.genre, search: initialUrl.search });
+  const prevFilter = useRef({ genres: initialUrl.genres, search: initialUrl.search });
 
-  const [genre, setGenre] = useState(initialUrl.genre);
+  const [genres, setGenres] = useState(initialUrl.genres);
   const [search, setSearch] = useState(initialUrl.search);
   const [sort, setSort] = useState(initialUrl.sort);
   const [gridItems, setGridItems] = useState([]);
@@ -77,6 +79,7 @@ export default function App() {
   const [openSourceRect, setOpenSourceRect] = useState(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [genrePickerOpen, setGenrePickerOpen] = useState(false);
 
   // Grid cards pass the clicked cover's own rect so the detail sheet can
   // visually grow out of it (see DetailSheet's FLIP transition); every
@@ -112,17 +115,17 @@ export default function App() {
   }, [isSaved, toggle, pushToast]);
 
   // Search and genre browsing are kept mutually exclusive rather than
-  // combinable — picking a genre clears any active search, and searching
-  // clears any active genre, so the grid is always driven by exactly one
+  // combinable — applying genres clears any active search, and searching
+  // clears any active genres, so the grid is always driven by exactly one
   // of the two instead of a "X in Genre" combination.
-  const onGenre = useCallback((g) => {
-    setGenre(g);
+  const onApplyGenres = useCallback((list) => {
+    setGenres(list);
     setSearch('');
   }, []);
 
   const onSearch = useCallback((q) => {
     setSearch(q);
-    setGenre(null);
+    setGenres([]);
   }, []);
 
   /* ── homepage hero: a handful of picks that hold steady all day
@@ -265,7 +268,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (genre) params.set('genre', genre);
+    if (genres.length) params.set('genre', genres.join(','));
     if (sort !== 'TRENDING_DESC') params.set('sort', sort);
     if (open) params.set('id', open.id);
     else if (deepLinkId.current) params.set('id', deepLinkId.current);
@@ -283,7 +286,7 @@ export default function App() {
       window.history.replaceState(null, '', url);
     }
     historyOpenId.current = openId;
-  }, [search, genre, sort, open]);
+  }, [search, genres, sort, open]);
 
   /* Back/forward should close (or restore) the detail sheet, not just
      leave it hanging while the URL underneath it changes. */
@@ -291,7 +294,7 @@ export default function App() {
     const onPopState = () => {
       const s = readUrlState();
       setSearch(s.search);
-      setGenre(s.genre);
+      setGenres(s.genres);
       setSort(s.sort);
       historyOpenId.current = s.id ? Number(s.id) : null;
       if (s.id) {
@@ -305,12 +308,12 @@ export default function App() {
   }, []);
 
   /* ── browse ─────────────────────────────────────────────── */
-  const load = useCallback(async ({ genre = null, search = '', sort = 'TRENDING_DESC' }) => {
+  const load = useCallback(async ({ genres = [], search = '', sort = 'TRENDING_DESC' }) => {
     setGridState('loading');
     setGridError('');
     setPage(1);
     try {
-      const { items, hasNextPage } = await fetchGrid({ genre, search: search || null, sort, page: 1 });
+      const { items, hasNextPage } = await fetchGrid({ genres, search: search || null, sort, page: 1 });
       setGridItems(items);
       setHasMore(hasNextPage);
       setGridState('ready');
@@ -321,10 +324,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    load({ genre, search, sort });
-  }, [genre, search, sort, load]);
+    load({ genres, search, sort });
+  }, [genres, search, sort, load]);
 
-  /* Changing genre/search moves the results into a section that's often
+  /* Changing genres/search moves the results into a section that's often
      well below the fold now (want-to-watch, airing soon, etc. all sit
      above it) — scroll it into view so picking a new filter is visibly
      acted on, instead of looking like nothing happened. Compares against
@@ -333,12 +336,12 @@ export default function App() {
      and doesn't yank the page on a deep-linked ?genre=/?search= URL. */
   useEffect(() => {
     const prev = prevFilter.current;
-    const changed = prev.genre !== genre || prev.search !== search;
-    prevFilter.current = { genre, search };
+    const changed = prev.genres !== genres || prev.search !== search;
+    prevFilter.current = { genres, search };
     if (changed) {
       gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [genre, search]);
+  }, [genres, search]);
 
   /* Same idea for AI recommendation results: they land in a section below
      the ask panel, easy to miss once the page has several rails/sections
@@ -351,7 +354,7 @@ export default function App() {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const { items, hasNextPage } = await fetchGrid({ genre, search: search || null, sort, page: next });
+      const { items, hasNextPage } = await fetchGrid({ genres, search: search || null, sort, page: next });
       setGridItems((prev) => [...prev, ...items]);
       setHasMore(hasNextPage);
       setPage(next);
@@ -360,15 +363,15 @@ export default function App() {
     } finally {
       setLoadingMore(false);
     }
-  }, [genre, search, sort, page]);
+  }, [genres, search, sort, page]);
 
   const canLoadMore = hasMore && gridState === 'ready' && !loadingMore;
   const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
 
   const gridTitle = search
     ? `Results for “${search}”`
-    : genre
-      ? `Top ${genre}`
+    : genres.length
+      ? `Top ${genres.join(' + ')}`
       : 'Trending now';
 
   const becauseSavedReference = becauseSaved?.reference ?? saved.find((m) => m.id === becauseSavedSeedId) ?? null;
@@ -492,15 +495,15 @@ export default function App() {
     <>
       <PageAura />
       <Masthead
-        activeGenre={genre}
+        activeGenres={genres}
         search={search}
-        onGenre={onGenre}
         onSearch={onSearch}
         onOpenMedia={openMedia}
         theme={theme}
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
         onOpenTransfer={() => setTransferOpen(true)}
+        onOpenGenrePicker={() => setGenrePickerOpen(true)}
         user={user}
         onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
@@ -666,7 +669,7 @@ export default function App() {
         {gridState === 'error' && (
           <Note error>
             Couldn’t reach the server — {gridError}{' '}
-            <button className="retry-link" onClick={() => load({ genre, search, sort })}>Try again</button>
+            <button className="retry-link" onClick={() => load({ genres, search, sort })}>Try again</button>
           </Note>
         )}
         {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
@@ -708,6 +711,14 @@ export default function App() {
 
       {historyOpen && (
         <CompletedHistory completions={completions} onOpenMedia={openMedia} onClose={() => setHistoryOpen(false)} />
+      )}
+
+      {genrePickerOpen && (
+        <GenrePicker
+          active={genres}
+          onApply={(list) => { onApplyGenres(list); setGenrePickerOpen(false); }}
+          onClose={() => setGenrePickerOpen(false)}
+        />
       )}
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />

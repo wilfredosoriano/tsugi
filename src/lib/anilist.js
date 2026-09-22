@@ -99,20 +99,36 @@ export const SORTS = [
   { value: 'START_DATE_DESC', label: 'Newest' },
 ];
 
-/** Trending, genre/demographic-filtered, or search results for the main grid. Paginated. */
-export async function fetchGrid({ genre = null, search = null, sort = null, page = 1 } = {}) {
-  const filterField = genre && (DEMOGRAPHICS.includes(genre) || TAG_GENRES.includes(genre)) ? 'tag' : 'genre';
-  const query = `query ($filterValue: String, $search: String, $sort: [MediaSort], $page: Int) {
+/**
+ * Trending, genre/demographic-filtered, or search results for the main
+ * grid. Paginated. `genres` can mix plain genres with demographics/tag
+ * genres — those need AniList's `tag` argument instead of `genre` (see
+ * DEMOGRAPHICS/TAG_GENRES above), so each selection is routed to the
+ * right one and both are sent together. genre_in/tag_in are both AND
+ * (a title must carry every value listed, not just one — confirmed
+ * directly against AniList), which is what lets multiple picks narrow
+ * the results together instead of just unioning separate lists.
+ */
+export async function fetchGrid({ genres = [], search = null, sort = null, page = 1 } = {}) {
+  const genreList = genres.filter((g) => !DEMOGRAPHICS.includes(g) && !TAG_GENRES.includes(g));
+  const tagList = genres.filter((g) => DEMOGRAPHICS.includes(g) || TAG_GENRES.includes(g));
+  const query = `query ($genreIn: [String], $tagIn: [String], $search: String, $sort: [MediaSort], $page: Int) {
     Page(page: $page, perPage: 24) {
       pageInfo { hasNextPage }
-      media(type: ANIME, isAdult: false, ${filterField}: $filterValue, search: $search, sort: $sort) {
+      media(type: ANIME, isAdult: false, genre_in: $genreIn, tag_in: $tagIn, search: $search, sort: $sort) {
         ${MEDIA_FIELDS}
       }
     }
   }`;
 
-  const effectiveSort = search ? ['SEARCH_MATCH'] : [sort || (genre ? 'SCORE_DESC' : 'TRENDING_DESC')];
-  const data = await gql(query, { filterValue: genre, search, sort: effectiveSort, page });
+  const effectiveSort = search ? ['SEARCH_MATCH'] : [sort || (genres.length ? 'SCORE_DESC' : 'TRENDING_DESC')];
+  const data = await gql(query, {
+    genreIn: genreList.length ? genreList : undefined,
+    tagIn: tagList.length ? tagList : undefined,
+    search,
+    sort: effectiveSort,
+    page,
+  });
   return {
     items: data.Page.media.filter(hasCover),
     hasNextPage: Boolean(data.Page.pageInfo?.hasNextPage),
