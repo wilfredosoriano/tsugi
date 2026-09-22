@@ -170,28 +170,26 @@ img { display: block; }
 main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 /* ── masthead ───────────────────────────────────────────── */
-/* Translucent rather than a solid fill, so the aura background (see
-   PageAura.jsx) still shows through, dimmed enough by the tint to keep
-   the header's own text and buttons legible over whatever scrolls
-   underneath.
+/* Translucent + blurred rather than a solid fill, so the aura
+   background (see PageAura.jsx) still shows — softened and darkened by
+   the blur/tint enough to keep the header's own text and buttons
+   legible over whatever scrolls underneath.
 
-   Deliberately NOT using backdrop-filter: blur() here anymore. It kept
-   producing edge-of-element rendering bugs where it met the genre
-   pills — first a hard color seam, then (after chasing that) a flat
-   unblurred box that survived several different fixes attempting to
-   taper it off. blur() cutting off instantly at an element's own edge
-   is inherent to the filter; every fix for that edge was really just
-   trying to paper over the same underlying seam in a different way.
-   Removing the blur removes the edge entirely — the tint still shows
-   the aura's color through it, just without the frosted-glass look. */
+   The actual bug chased through several earlier attempts was masking
+   this element's own alpha (mask-image), which triggers a real
+   compositing glitch when combined with backdrop-filter — that's gone
+   now and stays gone. backdrop-filter alone, with no mask on the same
+   element, does not reproduce it. */
 .masthead {
   position: sticky; top: 0; z-index: 40;
-  background: rgba(16, 14, 11, 0.55);
+  background: rgba(16, 14, 11, 0.4);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
   transition: background var(--dur-2) var(--ease);
   padding-top: env(safe-area-inset-top);
 }
 :root[data-theme='light'] .masthead {
-  background: rgba(250, 248, 242, 0.6);
+  background: rgba(250, 248, 242, 0.45);
 }
 .mast { display: flex; align-items: center; gap: 14px; padding: 14px 0 12px; }
 .logo { display: flex; align-items: baseline; gap: 8px; }
