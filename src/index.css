@@ -174,32 +174,26 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    background (see PageAura.jsx) still shows — softened and darkened by
    the blur/tint enough to keep the header's own text and buttons
    legible over whatever scrolls underneath. */
+/* backdrop-filter's blur amount cuts off instantly at the element's own
+   edge — 20px blur one pixel, 0px blur the next — which a color overlay
+   can't fix (an overlay only masks a mismatched tint, it doesn't make
+   the underlying blur itself taper off). A mask on the header's own
+   alpha feathers the whole effect — blur, saturate and tint together —
+   down to nothing over the last 20px, so whatever's scrolling
+   underneath comes into focus gradually instead of snapping into focus
+   right at the header's bottom edge. */
 .masthead {
   position: sticky; top: 0; z-index: 40;
   background: rgba(16, 14, 11, 0.4);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent 100%);
   transition: background var(--dur-2) var(--ease);
   padding-top: env(safe-area-inset-top);
 }
 :root[data-theme='light'] .masthead {
   background: rgba(250, 248, 242, 0.45);
-}
-/* backdrop-filter stops dead at the header's own bottom edge — no blur
-   past it — so whatever's scrolling underneath (the hero image, most
-   noticeably) can show a hard, visible seam right where the header
-   ends. This eases that transition by fading the header's own
-   translucent tint down to fully transparent over a few pixels, rather
-   than cutting straight to unblurred content. Fading to transparent
-   (not a solid color, which is what used to live here) means it can't
-   read as a shadow bar the way the old version did. */
-.masthead::after {
-  content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 16px;
-  background: linear-gradient(to bottom, rgba(16, 14, 11, 0.4), transparent);
-  pointer-events: none;
-}
-:root[data-theme='light'] .masthead::after {
-  background: linear-gradient(to bottom, rgba(250, 248, 242, 0.45), transparent);
 }
 .mast { display: flex; align-items: center; gap: 14px; padding: 14px 0 12px; }
 .logo { display: flex; align-items: baseline; gap: 8px; }
