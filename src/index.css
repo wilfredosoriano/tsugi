@@ -434,7 +434,11 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .genre-picker-search {
   width: 100%; padding: 10px 14px; margin: 14px 0; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--bg-elevated-2); color: var(--text);
-  font-size: 0.9rem; outline: none;
+  /* 16px, not smaller — iOS Safari auto-zooms the whole page in on focus
+     for any input with a font-size under that, which is what forced the
+     "zoom in on tap" the user hit here (same fix already applied to the
+     ask panel's textarea). */
+  font-size: 16px; outline: none;
   transition: border-color var(--dur-1) var(--ease);
 }
 .genre-picker-search:focus { border-color: var(--accent); }
