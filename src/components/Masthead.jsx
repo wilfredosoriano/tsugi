@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sun, Moon, Repeat, LogOut, Bell, SlidersHorizontal } from 'lucide-react';
-import { quickSearch, fetchById } from '../lib/anilist.js';
+import { Sun, Moon, Repeat, LogOut, Bell, SlidersHorizontal, CalendarRange } from 'lucide-react';
+import { quickSearch, fetchById, SEASONS } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
@@ -19,7 +19,8 @@ function loadSeen() {
 }
 
 export default function Masthead({
-  activeGenres, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer, onOpenGenrePicker,
+  activeGenres, activeSeason, activeSeasonYear, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount,
+  onOpenTransfer, onOpenGenrePicker, onOpenSeasonPicker,
   user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
@@ -362,6 +363,16 @@ export default function Masthead({
           <SlidersHorizontal size={14} strokeWidth={2.25} />
           {activeGenres.length ? activeGenres.join(', ') : 'Genres'}
           {activeGenres.length > 0 && <span className="genre-trigger-count">{activeGenres.length}</span>}
+        </button>
+        <button
+          className="season-trigger"
+          onClick={onOpenSeasonPicker}
+          aria-haspopup="true"
+        >
+          <CalendarRange size={14} strokeWidth={2.25} />
+          {[activeSeason ? SEASONS.find((s) => s.value === activeSeason)?.label : '', activeSeasonYear]
+            .filter(Boolean)
+            .join(' ') || 'Season'}
         </button>
       </div>
     </header>

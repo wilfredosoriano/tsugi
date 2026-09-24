@@ -409,20 +409,20 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .live-search-all:hover { background: var(--bg-elevated-2); }
 
-/* ── genre filter: trigger button + picker modal ───────────── */
+/* ── filter triggers (genre + season) + picker modals ──────── */
 /* padding-bottom only (not shorthand) — this element also carries the
    .wrap class for its own left/right padding, and a padding shorthand
    here would silently zero that out since both rules have equal
    specificity and this one comes later in the cascade. */
-.genre-trigger-wrap { padding-bottom: 14px; }
-.genre-trigger {
+.genre-trigger-wrap { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 14px; }
+.genre-trigger, .season-trigger {
   display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
   padding: 9px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-weight: 600; font-size: 0.84rem;
   background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
   transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
 }
-.genre-trigger:hover { border-color: var(--accent); color: var(--text); }
+.genre-trigger:hover, .season-trigger:hover { border-color: var(--accent); color: var(--text); }
 .genre-trigger-count {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
@@ -469,6 +469,26 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .genre-picker-clear { font-size: 0.85rem; font-weight: 600; color: var(--text-soft); }
 .genre-picker-clear:hover:not(:disabled) { color: var(--text); }
 .genre-picker-clear:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.season-picker { max-width: 460px; }
+.season-picker-body { padding: 4px 22px 20px; display: flex; flex-direction: column; gap: 8px; }
+.season-picker-body .label { font-size: 0.78rem; font-weight: 700; color: var(--text-soft); margin-top: 12px; }
+.season-picker-body .label:first-child { margin-top: 0; }
+.season-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.season-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 999px; white-space: nowrap;
+  font-weight: 600; font-size: 0.84rem;
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
+  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.season-pill:hover { border-color: var(--accent); color: var(--text); }
+.season-pill.active { background: var(--accent-gradient); border-color: transparent; color: #fff; }
+.season-year-select {
+  padding: 10px 14px; border-radius: 12px; font-size: 16px; font-weight: 600;
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text);
+}
+.season-year-select:focus { outline: none; border-color: var(--accent); }
 
 /* ── hero ───────────────────────────────────────────────── */
 /* Sits inside .wrap (not full-bleed) so it reads as a card like the rest

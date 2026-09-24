@@ -74,6 +74,14 @@ export const TAG_GENRES = [
   'Urban Fantasy', 'Magic', 'School', 'Coming of Age', 'Survival', 'Female Harem', 'Military', 'Martial Arts',
 ];
 
+/** AniList's fixed MediaSeason enum, in calendar order (not enum declaration order). */
+export const SEASONS = [
+  { value: 'WINTER', label: 'Winter' },
+  { value: 'SPRING', label: 'Spring' },
+  { value: 'SUMMER', label: 'Summer' },
+  { value: 'FALL', label: 'Fall' },
+];
+
 async function gql(query, variables = {}) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
@@ -100,31 +108,37 @@ export const SORTS = [
 ];
 
 /**
- * Trending, genre/demographic-filtered, or search results for the main
- * grid. Paginated. `genres` can mix plain genres with demographics/tag
- * genres — those need AniList's `tag` argument instead of `genre` (see
- * DEMOGRAPHICS/TAG_GENRES above), so each selection is routed to the
- * right one and both are sent together. genre_in/tag_in are both AND
- * (a title must carry every value listed, not just one — confirmed
- * directly against AniList), which is what lets multiple picks narrow
- * the results together instead of just unioning separate lists.
+ * Trending, genre/demographic-filtered, season/year-filtered, or search
+ * results for the main grid. Paginated. `genres` can mix plain genres
+ * with demographics/tag genres — those need AniList's `tag` argument
+ * instead of `genre` (see DEMOGRAPHICS/TAG_GENRES above), so each
+ * selection is routed to the right one and both are sent together.
+ * genre_in/tag_in are both AND (a title must carry every value listed,
+ * not just one — confirmed directly against AniList), which is what
+ * lets multiple picks narrow the results together instead of just
+ * unioning separate lists. season/seasonYear combine with genres/tags
+ * in the same query (also confirmed directly), so "Action, Fall 2024"
+ * narrows correctly rather than needing two separate fetches.
  */
-export async function fetchGrid({ genres = [], search = null, sort = null, page = 1 } = {}) {
+export async function fetchGrid({ genres = [], season = null, seasonYear = null, search = null, sort = null, page = 1 } = {}) {
   const genreList = genres.filter((g) => !DEMOGRAPHICS.includes(g) && !TAG_GENRES.includes(g));
   const tagList = genres.filter((g) => DEMOGRAPHICS.includes(g) || TAG_GENRES.includes(g));
-  const query = `query ($genreIn: [String], $tagIn: [String], $search: String, $sort: [MediaSort], $page: Int) {
+  const query = `query ($genreIn: [String], $tagIn: [String], $season: MediaSeason, $seasonYear: Int, $search: String, $sort: [MediaSort], $page: Int) {
     Page(page: $page, perPage: 24) {
       pageInfo { hasNextPage }
-      media(type: ANIME, isAdult: false, genre_in: $genreIn, tag_in: $tagIn, search: $search, sort: $sort) {
+      media(type: ANIME, isAdult: false, genre_in: $genreIn, tag_in: $tagIn, season: $season, seasonYear: $seasonYear, search: $search, sort: $sort) {
         ${MEDIA_FIELDS}
       }
     }
   }`;
 
-  const effectiveSort = search ? ['SEARCH_MATCH'] : [sort || (genres.length ? 'SCORE_DESC' : 'TRENDING_DESC')];
+  const hasFilter = genres.length || season || seasonYear;
+  const effectiveSort = search ? ['SEARCH_MATCH'] : [sort || (genres.length ? 'SCORE_DESC' : hasFilter ? 'POPULARITY_DESC' : 'TRENDING_DESC')];
   const data = await gql(query, {
     genreIn: genreList.length ? genreList : undefined,
     tagIn: tagList.length ? tagList : undefined,
+    season: season || undefined,
+    seasonYear: seasonYear || undefined,
     search,
     sort: effectiveSort,
     page,

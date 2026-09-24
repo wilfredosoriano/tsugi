@@ -7,12 +7,13 @@ import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
 import ListTransfer from './components/ListTransfer.jsx';
 import GenrePicker from './components/GenrePicker.jsx';
+import SeasonPicker from './components/SeasonPicker.jsx';
 import CompletedHistory from './components/CompletedHistory.jsx';
 import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
 import AiringCalendar from './components/AiringCalendar.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
-import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS, SEASONS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
@@ -24,14 +25,19 @@ import { displayTitle } from './lib/format.js';
 import { WATCH_STATUSES } from './lib/watchStatus.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
+const SEASON_VALUES = new Set(SEASONS.map((s) => s.value));
 
 function readUrlState() {
   const params = new URLSearchParams(window.location.search);
   const sort = params.get('sort');
   const genreParam = params.get('genre');
+  const seasonParam = params.get('season');
+  const yearParam = params.get('year');
   return {
     search: params.get('search') || '',
     genres: genreParam ? genreParam.split(',').filter(Boolean) : [],
+    season: seasonParam && SEASON_VALUES.has(seasonParam) ? seasonParam : null,
+    seasonYear: yearParam && /^\d{4}$/.test(yearParam) ? Number(yearParam) : null,
     sort: sort && SORT_VALUES.has(sort) ? sort : 'TRENDING_DESC',
     id: params.get('id'),
   };
@@ -43,9 +49,13 @@ export default function App() {
   const historyOpenId = useRef(initialUrl.id ? Number(initialUrl.id) : null);
   const gridSectionRef = useRef(null);
   const answerSectionRef = useRef(null);
-  const prevFilter = useRef({ genres: initialUrl.genres, search: initialUrl.search });
+  const prevFilter = useRef({
+    genres: initialUrl.genres, season: initialUrl.season, seasonYear: initialUrl.seasonYear, search: initialUrl.search,
+  });
 
   const [genres, setGenres] = useState(initialUrl.genres);
+  const [season, setSeason] = useState(initialUrl.season);
+  const [seasonYear, setSeasonYear] = useState(initialUrl.seasonYear);
   const [search, setSearch] = useState(initialUrl.search);
   const [sort, setSort] = useState(initialUrl.sort);
   const [gridItems, setGridItems] = useState([]);
@@ -80,6 +90,7 @@ export default function App() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [genrePickerOpen, setGenrePickerOpen] = useState(false);
+  const [seasonPickerOpen, setSeasonPickerOpen] = useState(false);
 
   // Grid cards pass the clicked cover's own rect so the detail sheet can
   // visually grow out of it (see DetailSheet's FLIP transition); every
@@ -114,18 +125,29 @@ export default function App() {
     pushToast(wasSaved ? `Removed “${displayTitle(media)}”` : `Saved “${displayTitle(media)}” to watch`);
   }, [isSaved, toggle, pushToast]);
 
-  // Search and genre browsing are kept mutually exclusive rather than
-  // combinable — applying genres clears any active search, and searching
-  // clears any active genres, so the grid is always driven by exactly one
-  // of the two instead of a "X in Genre" combination.
+  // Search is kept mutually exclusive with browsing rather than
+  // combinable — searching clears any active genres/season, and either
+  // of those clears an active search, so the grid is always driven by
+  // search alone or by the browse filters alone, never a mix. Genres
+  // and season/year, on the other hand, DO combine with each other
+  // (e.g. "Action, Fall 2024") — AniList's own query takes them
+  // together natively, so there's no reason to force a choice there.
   const onApplyGenres = useCallback((list) => {
     setGenres(list);
+    setSearch('');
+  }, []);
+
+  const onApplySeason = useCallback((nextSeason, nextYear) => {
+    setSeason(nextSeason);
+    setSeasonYear(nextYear);
     setSearch('');
   }, []);
 
   const onSearch = useCallback((q) => {
     setSearch(q);
     setGenres([]);
+    setSeason(null);
+    setSeasonYear(null);
   }, []);
 
   /* ── homepage hero: a handful of picks that hold steady all day
@@ -269,6 +291,8 @@ export default function App() {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (genres.length) params.set('genre', genres.join(','));
+    if (season) params.set('season', season);
+    if (seasonYear) params.set('year', seasonYear);
     if (sort !== 'TRENDING_DESC') params.set('sort', sort);
     if (open) params.set('id', open.id);
     else if (deepLinkId.current) params.set('id', deepLinkId.current);
@@ -286,7 +310,7 @@ export default function App() {
       window.history.replaceState(null, '', url);
     }
     historyOpenId.current = openId;
-  }, [search, genres, sort, open]);
+  }, [search, genres, season, seasonYear, sort, open]);
 
   /* Back/forward should close (or restore) the detail sheet, not just
      leave it hanging while the URL underneath it changes. */
@@ -295,6 +319,8 @@ export default function App() {
       const s = readUrlState();
       setSearch(s.search);
       setGenres(s.genres);
+      setSeason(s.season);
+      setSeasonYear(s.seasonYear);
       setSort(s.sort);
       historyOpenId.current = s.id ? Number(s.id) : null;
       if (s.id) {
@@ -308,12 +334,12 @@ export default function App() {
   }, []);
 
   /* ── browse ─────────────────────────────────────────────── */
-  const load = useCallback(async ({ genres = [], search = '', sort = 'TRENDING_DESC' }) => {
+  const load = useCallback(async ({ genres = [], season = null, seasonYear = null, search = '', sort = 'TRENDING_DESC' }) => {
     setGridState('loading');
     setGridError('');
     setPage(1);
     try {
-      const { items, hasNextPage } = await fetchGrid({ genres, search: search || null, sort, page: 1 });
+      const { items, hasNextPage } = await fetchGrid({ genres, season, seasonYear, search: search || null, sort, page: 1 });
       setGridItems(items);
       setHasMore(hasNextPage);
       setGridState('ready');
@@ -324,24 +350,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    load({ genres, search, sort });
-  }, [genres, search, sort, load]);
+    load({ genres, season, seasonYear, search, sort });
+  }, [genres, season, seasonYear, search, sort, load]);
 
-  /* Changing genres/search moves the results into a section that's often
-     well below the fold now (want-to-watch, airing soon, etc. all sit
-     above it) — scroll it into view so picking a new filter is visibly
-     acted on, instead of looking like nothing happened. Compares against
-     the previous value (rather than a "skip the first run" flag) so it
-     doesn't misfire on mount under StrictMode's double-invoked effects,
-     and doesn't yank the page on a deep-linked ?genre=/?search= URL. */
+  /* Changing genres/season/search moves the results into a section that's
+     often well below the fold now (want-to-watch, airing soon, etc. all
+     sit above it) — scroll it into view so picking a new filter is
+     visibly acted on, instead of looking like nothing happened. Compares
+     against the previous value (rather than a "skip the first run" flag)
+     so it doesn't misfire on mount under StrictMode's double-invoked
+     effects, and doesn't yank the page on a deep-linked
+     ?genre=/?season=/?search= URL. */
   useEffect(() => {
     const prev = prevFilter.current;
-    const changed = prev.genres !== genres || prev.search !== search;
-    prevFilter.current = { genres, search };
+    const changed = prev.genres !== genres || prev.season !== season || prev.seasonYear !== seasonYear || prev.search !== search;
+    prevFilter.current = { genres, season, seasonYear, search };
     if (changed) {
       gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [genres, search]);
+  }, [genres, season, seasonYear, search]);
 
   /* Same idea for AI recommendation results: they land in a section below
      the ask panel, easy to miss once the page has several rails/sections
@@ -354,7 +381,7 @@ export default function App() {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const { items, hasNextPage } = await fetchGrid({ genres, search: search || null, sort, page: next });
+      const { items, hasNextPage } = await fetchGrid({ genres, season, seasonYear, search: search || null, sort, page: next });
       setGridItems((prev) => [...prev, ...items]);
       setHasMore(hasNextPage);
       setPage(next);
@@ -363,15 +390,19 @@ export default function App() {
     } finally {
       setLoadingMore(false);
     }
-  }, [genres, search, sort, page]);
+  }, [genres, season, seasonYear, search, sort, page]);
 
   const canLoadMore = hasMore && gridState === 'ready' && !loadingMore;
   const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
 
+  const seasonLabel = [season ? SEASONS.find((s) => s.value === season)?.label : '', seasonYear]
+    .filter(Boolean)
+    .join(' ');
+  const filterLabels = [...genres, seasonLabel].filter(Boolean);
   const gridTitle = search
     ? `Results for “${search}”`
-    : genres.length
-      ? `Top ${genres.join(' + ')}`
+    : filterLabels.length
+      ? `Top ${filterLabels.join(' + ')}`
       : 'Trending now';
 
   const becauseSavedReference = becauseSaved?.reference ?? saved.find((m) => m.id === becauseSavedSeedId) ?? null;
@@ -496,6 +527,8 @@ export default function App() {
       <PageAura />
       <Masthead
         activeGenres={genres}
+        activeSeason={season}
+        activeSeasonYear={seasonYear}
         search={search}
         onSearch={onSearch}
         onOpenMedia={openMedia}
@@ -504,6 +537,7 @@ export default function App() {
         savedCount={saved.length}
         onOpenTransfer={() => setTransferOpen(true)}
         onOpenGenrePicker={() => setGenrePickerOpen(true)}
+        onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
         user={user}
         onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
@@ -669,7 +703,7 @@ export default function App() {
         {gridState === 'error' && (
           <Note error>
             Couldn’t reach the server — {gridError}{' '}
-            <button className="retry-link" onClick={() => load({ genres, search, sort })}>Try again</button>
+            <button className="retry-link" onClick={() => load({ genres, season, seasonYear, search, sort })}>Try again</button>
           </Note>
         )}
         {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
@@ -718,6 +752,15 @@ export default function App() {
           active={genres}
           onApply={(list) => { onApplyGenres(list); setGenrePickerOpen(false); }}
           onClose={() => setGenrePickerOpen(false)}
+        />
+      )}
+
+      {seasonPickerOpen && (
+        <SeasonPicker
+          activeSeason={season}
+          activeYear={seasonYear}
+          onApply={(nextSeason, nextYear) => { onApplySeason(nextSeason, nextYear); setSeasonPickerOpen(false); }}
+          onClose={() => setSeasonPickerOpen(false)}
         />
       )}
 
