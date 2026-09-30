@@ -191,8 +191,15 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 :root[data-theme='light'] .masthead {
   background: rgba(250, 248, 242, 0.45);
 }
-.mast { display: flex; align-items: center; gap: 14px; padding: 14px 0 12px; }
-.logo { display: flex; align-items: baseline; gap: 8px; }
+.masthead::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: var(--border); pointer-events: none;
+}
+/* One row on desktop — logo, search, actions — so the sticky header costs
+   ~68px of screen instead of stacking three rows. On phones the search
+   drops to its own full-width row underneath (see the 720px block). */
+.mast { display: flex; align-items: center; gap: 20px; padding-top: 12px; padding-bottom: 12px; }
+.logo { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .logo b {
   font-family: 'Inter', sans-serif; font-weight: 900;
   font-size: clamp(22px, 4vw, 27px);
@@ -204,28 +211,25 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   font-weight: 700;
   color: var(--accent-strong);
 }
-.tagline {
-  font-size: 0.85rem; color: var(--text-faint);
-  margin-left: 18px; max-width: 26ch;
-  display: none;
-}
-@media (min-width: 900px) { .tagline { display: block; } }
 
 /* The auto margin lives on the wrapping group, not on individual buttons —
    if each button in the row carried its own margin-left: auto, flexbox
    would split the free space evenly between all of them instead of
    collapsing it, leaving earlier buttons stranded mid-bar instead of
    grouped at the edge with the last one. */
-.header-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.header-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+/* Quiet, borderless utility buttons — they're secondary to search and
+   shouldn't compete with it for attention. */
 .icon-btn {
-  width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
-  background: var(--bg-elevated); border: 1px solid var(--border);
+  width: 40px; height: 40px; min-width: 40px; border-radius: 12px;
+  color: var(--text-soft);
   font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  transition: background var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-bounce);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
-.icon-btn:hover { background: var(--accent-gradient); color: #fff; transform: rotate(-14deg) scale(1.06); }
-.icon-btn:active { transform: rotate(-14deg) scale(0.94); }
+.icon-btn:hover { background: var(--bg-elevated-2); color: var(--text); }
+.icon-btn:active { transform: scale(0.94); }
+.header-actions .google-btn, .header-actions .account, .header-actions .account-skeleton { margin-left: 6px; }
 .google-btn {
   display: flex; align-items: center; gap: 8px;
   height: 40px; padding: 0 16px 0 14px; border-radius: 999px;
@@ -344,32 +348,36 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.search-wrap { position: relative; margin-bottom: 14px; }
+.search-wrap { position: relative; flex: 1; min-width: 0; max-width: 620px; margin: 0 auto; }
 .searchbar {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px; height: 44px;
   border-radius: 999px; background: var(--bg-elevated); border: 1px solid var(--border);
-  padding: 4px 4px 4px 16px;
-  /* floating: it sits above the flat header plane rather than flush with it */
-  box-shadow: var(--shadow);
-  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+  padding: 0 5px 0 16px;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
-.searchbar:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
-.searchbar:focus-within {
-  border-color: var(--accent); transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), 0 0 0 4px var(--accent-wash);
-}
+.searchbar:hover { border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+.searchbar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-wash); }
+.searchbar-icon { color: var(--text-faint); flex-shrink: 0; }
 .searchbar input {
   flex: 1; border: none; background: transparent; padding: 10px 0;
-  font-size: 0.98rem; outline: none; min-width: 0;
+  font-size: 0.95rem; outline: none; min-width: 0;
 }
 .searchbar input::placeholder { color: var(--text-faint); }
-.searchbar button {
-  padding: 10px 20px; background: var(--accent-gradient); color: #fff; border-radius: 999px;
-  font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+.searchbar input::-webkit-search-cancel-button { display: none; }
+.searchbar-kbd {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  min-width: 24px; height: 24px; margin-right: 6px; padding: 0 6px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg-elevated-2);
+  font: 600 0.75rem/1 'Inter', sans-serif; color: var(--text-faint);
+}
+.searchbar-go {
+  height: 34px; padding: 0 16px; background: var(--accent-gradient); color: #fff; border-radius: 999px;
+  font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
+  animation: fade var(--dur-1) var(--ease) both;
   transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
 }
-.searchbar button:hover { filter: brightness(1.08); }
-.searchbar button:active { transform: scale(0.96); }
+.searchbar-go:hover { filter: brightness(1.08); }
+.searchbar-go:active { transform: scale(0.96); }
 
 /* ── live search dropdown ───────────────────────────────── */
 .live-search {
@@ -409,25 +417,34 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 .live-search-all:hover { background: var(--bg-elevated-2); }
 
-/* ── filter triggers (genre + season) + picker modals ──────── */
-/* padding-bottom only (not shorthand) — this element also carries the
-   .wrap class for its own left/right padding, and a padding shorthand
-   here would silently zero that out since both rules have equal
-   specificity and this one comes later in the cascade. */
-.genre-trigger-wrap { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 14px; }
-.genre-trigger, .season-trigger {
-  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
-  padding: 9px 16px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+/* ── browse filter toolbar (genre + season + sort) + picker modals ── */
+.filters { display: flex; align-items: center; gap: 10px; margin: -4px 0 18px; }
+.filters-scroll {
+  display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
+  overflow-x: auto; scrollbar-width: none; padding: 2px;
+}
+.filters-scroll::-webkit-scrollbar { display: none; }
+.filter-btn, .filter-chip {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; max-width: 260px; height: 36px;
+  padding: 0 14px; border-radius: 999px; white-space: nowrap;
   font-weight: 600; font-size: 0.84rem;
   background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-soft);
-  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.genre-trigger:hover, .season-trigger:hover { border-color: var(--accent); color: var(--text); }
-.genre-trigger-count {
+.filter-btn:hover, .filter-chip:hover { border-color: var(--accent); color: var(--text); }
+.filter-btn svg { flex-shrink: 0; }
+.filter-btn-text { overflow: hidden; text-overflow: ellipsis; }
+.filter-btn.on, .filter-chip { background: var(--accent-wash); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-strong); }
+.filter-btn-count {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
   background: var(--accent-gradient); color: #fff; font-size: 0.7rem; font-weight: 800;
 }
+.filter-clear {
+  flex-shrink: 0; padding: 0 6px; height: 36px;
+  font-size: 0.82rem; font-weight: 600; color: var(--text-faint);
+}
+.filter-clear:hover { color: var(--text); }
 
 .genre-picker { max-width: 560px; }
 .genre-picker-body { padding: 4px 22px 0; max-height: 60vh; overflow-y: auto; }
@@ -642,22 +659,28 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   width: 260px; height: 260px; pointer-events: none; border-radius: 50%;
   background: radial-gradient(circle, var(--accent-wash), transparent 70%);
 }
-.ask-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 0; position: relative; }
+.ask-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 20px 0; position: relative; }
 .ask-head .n {
   width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Noto Sans JP', sans-serif; font-weight: 700; color: #fff; font-size: 1rem;
   background: var(--accent-gradient);
 }
-.ask-head h2 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+.ask-head h2 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.3; }
+.ask-sub { font-size: 0.85rem; color: var(--text-soft); margin-top: 2px; }
 .ask-body { padding: 16px 20px 20px; position: relative; }
-.ask-body textarea {
-  width: 100%; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated-2);
-  padding: 14px 16px; font-size: 1rem; resize: vertical; min-height: 76px; outline: none;
+.ask-composer {
+  border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated-2);
   transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
-.ask-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-wash); }
-.ask-row { display: flex; gap: 12px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.ask-composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-wash); }
+.ask-composer textarea {
+  display: block; width: 100%; border: none; background: transparent;
+  padding: 14px 16px 4px; font-size: 1rem; resize: none; min-height: 64px; outline: none;
+}
+.ask-composer-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 6px 8px 8px 16px; }
+.ask-kbd { font-size: 0.72rem; font-weight: 600; color: var(--text-faint); }
+.ask-submit { padding: 10px 18px; font-size: 0.85rem; }
 
 .btn {
   position: relative; overflow: hidden; isolation: isolate;
@@ -680,7 +703,8 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .btn:disabled::before { display: none; }
 
-.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+.chips-label { font-size: 0.78rem; font-weight: 600; color: var(--text-faint); margin-right: 2px; }
 .chips button {
   border-radius: 999px; border: 1px solid var(--border); background: var(--bg-elevated-2);
   padding: 7px 13px; font-size: 0.8rem; color: var(--text-soft);
@@ -696,18 +720,17 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 
 /* ── section heads ──────────────────────────────────────── */
-/* Offsets scrollIntoView so the sticky masthead (logo + search + genre
-   trigger, ~192px tall) doesn't land on top of the section it scrolls to. */
-.grid-scroll-anchor { scroll-margin-top: 205px; }
+/* Offsets scrollIntoView so the sticky masthead (~68px on desktop, two
+   rows / ~118px on phones) doesn't land on top of the section it scrolls to. */
+.grid-scroll-anchor { scroll-margin-top: 84px; }
 
 .sec {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 36px 0 16px;
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 40px 0 16px;
 }
-.sec h3 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.015em; }
-.sec .count { margin-left: auto; color: var(--text-faint); font-size: 0.85rem; }
-.sec .sortctl { margin-left: 14px; }
-.sec .status-filter { margin-left: 14px; }
+.sec h3 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.015em; line-height: 1.25; }
+.sec .count { color: var(--text-faint); font-size: 0.85rem; font-weight: 600; }
+.sec-actions { margin-left: auto; align-self: center; }
 
 .status-filter { display: flex; gap: 6px; flex-wrap: wrap; }
 .status-filter button {
@@ -718,10 +741,11 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .status-filter button:hover { background: var(--accent-wash); color: var(--accent-strong); }
 .status-filter button.active { background: var(--accent-gradient); color: #fff; border-color: transparent; }
 
-.sortctl { display: flex; align-items: center; gap: 8px; color: var(--text-faint); font-size: 0.82rem; }
+.sortctl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--text-faint); font-size: 0.82rem; font-weight: 600; }
 .sortctl select {
+  height: 36px; cursor: pointer;
   border-radius: 999px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text);
-  padding: 7px 14px; font-size: 0.82rem; font-weight: 600;
+  padding: 0 14px; font-size: 0.84rem; font-weight: 600;
   appearance: none; -webkit-appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: calc(100% - 16px) center, calc(100% - 11px) center;
@@ -801,6 +825,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    than sizing anything to actual content. */
 .airing-desktop { display: none; }
 .airing-block + .airing-block { margin-top: 28px; }
+.airing-desktop .sec { margin-top: 26px; }
 .airing-list-vertical { display: flex; flex-direction: column; gap: 10px; }
 .airing-list-vertical .airing-item { width: 100%; flex: none; }
 
@@ -812,7 +837,7 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
   .airing-mobile { display: none; }
   .airing-desktop {
     display: block; grid-column: 1;
-    position: sticky; top: 215px; max-height: calc(100vh - 230px); overflow-y: auto;
+    position: sticky; top: 88px; max-height: calc(100vh - 104px); overflow-y: auto;
     scrollbar-width: none;
   }
   .airing-desktop::-webkit-scrollbar { display: none; }
@@ -975,18 +1000,22 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 .progress-total { font-size: 0.8rem; font-weight: 700; color: var(--text-faint); }
 
 /* ── weekly airing calendar ─────────────────────────────────── */
+/* A single 7-column segmented strip — every day always on one row, with
+   its episode count underneath, instead of pills wrapping into 2-3 ragged
+   rows. */
 .calendar-tabs {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 14px;
+  padding: 3px; border-radius: 14px; background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .calendar-tab {
-  position: relative; flex-shrink: 0; display: flex; align-items: center; gap: 6px;
-  padding: 7px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700;
-  background: var(--bg-elevated-2); border: 1px solid var(--border); color: var(--text-soft);
+  position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 0 5px; border-radius: 11px; font-size: 0.74rem; font-weight: 700; color: var(--text-soft);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.calendar-tab.active { background: var(--accent-gradient); color: #fff; border-color: transparent; }
-.calendar-tab-today { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
-.calendar-tab-count { font-size: 0.72rem; font-weight: 600; opacity: 0.7; }
+.calendar-tab:hover:not(.active) { background: var(--bg-elevated-2); color: var(--text); }
+.calendar-tab.active { background: var(--accent-gradient); color: #fff; }
+.calendar-tab-today { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
+.calendar-tab-count { font-size: 0.68rem; font-weight: 600; opacity: 0.7; }
 .calendar-empty { padding: 12px 2px; }
 
 /* ── list transfer (export/import, no account needed) ─────── */
@@ -1173,18 +1202,30 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
 /* ── mobile ─────────────────────────────────────────────── */
 @media (max-width: 720px) {
   /* left/right only — several elements also carry the .wrap class for
-     their own top/bottom padding (see .genre-trigger-wrap), and a
-     padding shorthand here would silently zero that out. */
+     their own top/bottom padding (see .mast), and a padding shorthand
+     here would silently zero that out. */
   .wrap { padding-left: 14px; padding-right: 14px; }
+  .mast { flex-wrap: wrap; gap: 10px 12px; padding-top: 10px; padding-bottom: 10px; }
+  .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
+  .searchbar-kbd { display: none; }
+  .grid-scroll-anchor { scroll-margin-top: 130px; }
   .grid { grid-template-columns: repeat(2, 1fr); gap: 14px 12px; }
   .sec { margin: 28px 0 14px; }
-  .sec .sortctl { margin-left: 0; order: 3; flex-basis: 100%; }
-  .sec .status-filter { margin-left: 0; order: 3; flex-basis: 100%; }
+  .sec-actions { margin-left: 0; flex-basis: 100%; }
+  .sortctl-label { display: none; }
+  /* Too narrow for filters-left / sort-right: the whole toolbar becomes one
+     swipeable chip row (sort last) instead of sort squeezing the filters. */
+  .filters { overflow-x: auto; scrollbar-width: none; margin-left: -14px; margin-right: -14px; padding: 0 14px; gap: 8px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters-scroll { flex: none; overflow: visible; padding: 2px 0; }
+  .filter-btn { max-width: 200px; }
+  .ask-kbd { display: none; }
+  .ask-head .n { display: none; }
   .ask { margin: 18px 0; }
   .ask-head { padding: 16px 16px 0; }
   .ask-body { padding: 14px 16px 16px; }
   .ask-body textarea { font-size: 16px; }
-  .btn, .searchbar button, .genre-trigger { min-height: 44px; }
+  .btn, .filter-btn, .filter-chip, .sortctl select { min-height: 44px; }
 
   .scrim { align-items: flex-end; padding: 0; }
   .sheet {

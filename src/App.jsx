@@ -12,7 +12,8 @@ import CompletedHistory from './components/CompletedHistory.jsx';
 import ToastStack from './components/Toast.jsx';
 import AiringRail from './components/AiringRail.jsx';
 import AiringCalendar from './components/AiringCalendar.jsx';
-import { Grid, Skeletons, Loading, Note, SectionHead, SortControl } from './components/Grid.jsx';
+import { Grid, Skeletons, Loading, Note, SectionHead } from './components/Grid.jsx';
+import BrowseFilters from './components/BrowseFilters.jsx';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS, SEASONS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
@@ -526,9 +527,6 @@ export default function App() {
     <>
       <PageAura />
       <Masthead
-        activeGenres={genres}
-        activeSeason={season}
-        activeSeasonYear={seasonYear}
         search={search}
         onSearch={onSearch}
         onOpenMedia={openMedia}
@@ -536,8 +534,6 @@ export default function App() {
         onToggleTheme={toggleTheme}
         savedCount={saved.length}
         onOpenTransfer={() => setTransferOpen(true)}
-        onOpenGenrePicker={() => setGenrePickerOpen(true)}
-        onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
         user={user}
         onGoogleCredential={handleGoogleCredential}
         onSignOut={signOut}
@@ -565,7 +561,7 @@ export default function App() {
             )}
             {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
               <div className="airing-block">
-                <SectionHead title="This week" count="by day" />
+                <SectionHead title="Airing this week" />
                 <AiringCalendar days={weeklyAiring} onOpen={openMedia} vertical />
               </div>
             )}
@@ -618,7 +614,7 @@ export default function App() {
 
         {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
           <section className="airing-mobile">
-            <SectionHead title="This week" count="by day" />
+            <SectionHead title="Airing this week" />
             <AiringCalendar days={weeklyAiring} onOpen={openMedia} />
           </section>
         )}
@@ -693,11 +689,18 @@ export default function App() {
         <SectionHead
           title={gridTitle}
           count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
-        >
-          {!search && (
-            <SortControl value={sort} onChange={setSort} />
-          )}
-        </SectionHead>
+        />
+        <BrowseFilters
+          genres={genres}
+          seasonLabel={seasonLabel}
+          sort={sort}
+          search={search}
+          onSort={setSort}
+          onOpenGenrePicker={() => setGenrePickerOpen(true)}
+          onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
+          onClearFilters={() => { onApplyGenres([]); onApplySeason(null, null); }}
+          onClearSearch={() => onSearch('')}
+        />
 
         {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
         {gridState === 'error' && (

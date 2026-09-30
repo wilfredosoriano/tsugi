@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sun, Moon, Repeat, LogOut, Bell, SlidersHorizontal, CalendarRange } from 'lucide-react';
-import { quickSearch, fetchById, SEASONS } from '../lib/anilist.js';
+import { Sun, Moon, Repeat, LogOut, Bell, Search } from 'lucide-react';
+import { quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
@@ -19,8 +19,7 @@ function loadSeen() {
 }
 
 export default function Masthead({
-  activeGenres, activeSeason, activeSeasonYear, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount,
-  onOpenTransfer, onOpenGenrePicker, onOpenSeasonPicker,
+  search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
   user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
@@ -183,114 +182,15 @@ export default function Masthead({
 
   return (
     <header className="masthead">
-      <div className="wrap">
-        <div className="mast">
-          <div className="logo">
-            <b>Tsugi</b>
-            <span className="kanji">次</span>
-          </div>
-          <p className="tagline">A reading room for deciding what you watch next.</p>
-          <div className="header-actions">
-            <button
-              className="icon-btn"
-              onClick={onOpenTransfer}
-              aria-label={savedCount > 0 ? 'Move, share, or import your saved list' : 'Import a saved list from another device'}
-              title="Move, share, or import your list"
-            >
-              <Repeat size={16} strokeWidth={2} />
-            </button>
-            <button
-              className="icon-btn"
-              onClick={onToggleTheme}
-              aria-label={theme === 'dark' ? 'Switch to day edition' : 'Switch to night edition'}
-              title={theme === 'dark' ? 'Day edition' : 'Night edition'}
-            >
-              {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
-            </button>
-            <div className="bell" ref={bellRef}>
-              <button
-                className="icon-btn"
-                onClick={toggleBell}
-                aria-haspopup="true"
-                aria-expanded={bellOpen}
-                aria-label={unseenAlerts.length > 0 ? `${unseenAlerts.length} new airing alerts` : 'Airing alerts'}
-                title="Airing alerts"
-              >
-                <Bell size={17} strokeWidth={2} />
-                {unseenAlerts.length > 0 && <span className="bell-badge">{unseenAlerts.length}</span>}
-              </button>
-              {bellOpen && (
-                <div className="bell-menu" role="menu">
-                  <p className="bell-menu-title">Airing soon</p>
-                  {airingAlerts?.length > 0 ? (
-                    <div className="bell-menu-list">
-                      {airingAlerts.map((a) => (
-                        <button
-                          key={alertKey(a)}
-                          className="bell-menu-item"
-                          role="menuitem"
-                          onClick={() => { setBellOpen(false); onOpenMedia(a.media); }}
-                        >
-                          <img src={a.media.coverImage.large} alt="" loading="lazy" />
-                          <span className="bell-menu-info">
-                            <span className="bell-menu-name">{displayTitle(a.media)}</span>
-                            <span className="bell-menu-when">Episode {a.episode} · {formatAiring(a.airingAt)}</span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="bell-menu-empty">Nothing on your Watching list airs soon.</p>
-                  )}
-                </div>
-              )}
-            </div>
-            {syncEnabled && (
-              !authReady ? (
-                // Firebase's own session check is async — on a cold start
-                // (a force-closed PWA, a fresh tab) `user` briefly reads
-                // null before it resolves. Rendering the sign-in button
-                // during that gap flashes "signed out" for an instant even
-                // for someone who already is signed in, so hold a neutral
-                // placeholder here until the real answer is known.
-                <span className="account-skeleton" aria-hidden="true" />
-              ) : user ? (
-                <div className="account" ref={accountRef}>
-                  <button
-                    className="account-trigger"
-                    onClick={() => setAccountMenuOpen((v) => !v)}
-                    aria-haspopup="true"
-                    aria-expanded={accountMenuOpen}
-                    aria-label={`Synced as ${user.displayName || user.email} — open account menu`}
-                    title={`Synced as ${user.displayName || user.email}`}
-                  >
-                    {user.photoURL
-                      ? <img className="account-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />
-                      : <span className="account-avatar avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
-                    <span className="account-name">{user.displayName || user.email}</span>
-                  </button>
-                  {accountMenuOpen && (
-                    <div className="account-menu" role="menu">
-                      <p className="account-menu-email">{user.email}</p>
-                      <button
-                        className="account-menu-signout"
-                        role="menuitem"
-                        onClick={() => { setAccountMenuOpen(false); onSignOut(); }}
-                      >
-                        <LogOut size={15} strokeWidth={2} /> Log out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <GoogleSignInButton onCredential={onGoogleCredential} />
-              )
-            )}
-          </div>
+      <div className="wrap mast">
+        <div className="logo">
+          <b>Tsugi</b>
+          <span className="kanji">次</span>
         </div>
 
         <div className="search-wrap" ref={wrapRef}>
           <div className="searchbar">
+            <Search className="searchbar-icon" size={17} strokeWidth={2.25} aria-hidden="true" />
             <input
               ref={searchInputRef}
               type="search"
@@ -305,7 +205,12 @@ export default function Masthead({
               aria-autocomplete="list"
               aria-controls="live-search-list"
             />
-            <button onClick={submit}>Search</button>
+            {/* The "/" hint and the submit button share one slot: the hint
+                says how to get here, the button only matters once there's
+                something typed to submit. */}
+            {term.trim()
+              ? <button className="searchbar-go" onClick={submit}>Search</button>
+              : <kbd className="searchbar-kbd" aria-hidden="true">/</kbd>}
           </div>
 
           {showDropdown && (
@@ -352,28 +257,104 @@ export default function Masthead({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="wrap genre-trigger-wrap">
-        <button
-          className="genre-trigger"
-          onClick={onOpenGenrePicker}
-          aria-haspopup="true"
-        >
-          <SlidersHorizontal size={14} strokeWidth={2.25} />
-          {activeGenres.length ? activeGenres.join(', ') : 'Genres'}
-          {activeGenres.length > 0 && <span className="genre-trigger-count">{activeGenres.length}</span>}
-        </button>
-        <button
-          className="season-trigger"
-          onClick={onOpenSeasonPicker}
-          aria-haspopup="true"
-        >
-          <CalendarRange size={14} strokeWidth={2.25} />
-          {[activeSeason ? SEASONS.find((s) => s.value === activeSeason)?.label : '', activeSeasonYear]
-            .filter(Boolean)
-            .join(' ') || 'Season'}
-        </button>
+        <div className="header-actions">
+          <button
+            className="icon-btn"
+            onClick={onOpenTransfer}
+            aria-label={savedCount > 0 ? 'Move, share, or import your saved list' : 'Import a saved list from another device'}
+            title="Move, share, or import your list"
+          >
+            <Repeat size={16} strokeWidth={2} />
+          </button>
+          <button
+            className="icon-btn"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to day edition' : 'Switch to night edition'}
+            title={theme === 'dark' ? 'Day edition' : 'Night edition'}
+          >
+            {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
+          </button>
+          <div className="bell" ref={bellRef}>
+            <button
+              className="icon-btn"
+              onClick={toggleBell}
+              aria-haspopup="true"
+              aria-expanded={bellOpen}
+              aria-label={unseenAlerts.length > 0 ? `${unseenAlerts.length} new airing alerts` : 'Airing alerts'}
+              title="Airing alerts"
+            >
+              <Bell size={17} strokeWidth={2} />
+              {unseenAlerts.length > 0 && <span className="bell-badge">{unseenAlerts.length}</span>}
+            </button>
+            {bellOpen && (
+              <div className="bell-menu" role="menu">
+                <p className="bell-menu-title">Airing soon</p>
+                {airingAlerts?.length > 0 ? (
+                  <div className="bell-menu-list">
+                    {airingAlerts.map((a) => (
+                      <button
+                        key={alertKey(a)}
+                        className="bell-menu-item"
+                        role="menuitem"
+                        onClick={() => { setBellOpen(false); onOpenMedia(a.media); }}
+                      >
+                        <img src={a.media.coverImage.large} alt="" loading="lazy" />
+                        <span className="bell-menu-info">
+                          <span className="bell-menu-name">{displayTitle(a.media)}</span>
+                          <span className="bell-menu-when">Episode {a.episode} · {formatAiring(a.airingAt)}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="bell-menu-empty">Nothing on your Watching list airs soon.</p>
+                )}
+              </div>
+            )}
+          </div>
+          {syncEnabled && (
+            !authReady ? (
+              // Firebase's own session check is async — on a cold start
+              // (a force-closed PWA, a fresh tab) `user` briefly reads
+              // null before it resolves. Rendering the sign-in button
+              // during that gap flashes "signed out" for an instant even
+              // for someone who already is signed in, so hold a neutral
+              // placeholder here until the real answer is known.
+              <span className="account-skeleton" aria-hidden="true" />
+            ) : user ? (
+              <div className="account" ref={accountRef}>
+                <button
+                  className="account-trigger"
+                  onClick={() => setAccountMenuOpen((v) => !v)}
+                  aria-haspopup="true"
+                  aria-expanded={accountMenuOpen}
+                  aria-label={`Synced as ${user.displayName || user.email} — open account menu`}
+                  title={`Synced as ${user.displayName || user.email}`}
+                >
+                  {user.photoURL
+                    ? <img className="account-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+                    : <span className="account-avatar avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
+                  <span className="account-name">{user.displayName || user.email}</span>
+                </button>
+                {accountMenuOpen && (
+                  <div className="account-menu" role="menu">
+                    <p className="account-menu-email">{user.email}</p>
+                    <button
+                      className="account-menu-signout"
+                      role="menuitem"
+                      onClick={() => { setAccountMenuOpen(false); onSignOut(); }}
+                    >
+                      <LogOut size={15} strokeWidth={2} /> Log out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <GoogleSignInButton onCredential={onGoogleCredential} />
+            )
+          )}
+        </div>
       </div>
     </header>
   );

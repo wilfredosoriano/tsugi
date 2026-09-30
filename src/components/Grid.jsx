@@ -1,5 +1,4 @@
 import Plate from './Plate.jsx';
-import { SORTS } from '../lib/anilist.js';
 
 export function Grid({ items, ranked = false, onOpen, onSave, isSaved, horizontal = false }) {
   return (
@@ -49,21 +48,8 @@ export function SectionHead({ title, count, children }) {
   return (
     <div className="sec">
       <h3>{title}</h3>
-      {count && <span className="count mono">{count}</span>}
-      {children}
+      {count && <span className="count">{count}</span>}
+      {children && <div className="sec-actions">{children}</div>}
     </div>
-  );
-}
-
-export function SortControl({ value, onChange }) {
-  return (
-    <label className="sortctl mono">
-      Sort
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Sort browse results">
-        {SORTS.map((s) => (
-          <option key={s.value} value={s.value}>{s.label}</option>
-        ))}
-      </select>
-    </label>
   );
 }
