@@ -41,11 +41,11 @@ export const SEARCH_PLATFORMS = [
   // Not licensors — unofficial aggregators. Kept, but flagged and visually
   // separated (see DetailSheet's "unlicensed" group) rather than mixed in
   // with the platforms above as if they were equivalent.
-  { site: 'Anime BD', url: (q) => `https://anibd.app/?s=${encodeURIComponent(q)}`, licensed: false },
   { site: 'Anikoto TV', url: (q) => `https://anikototv.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
   { site: 'Anix TV', url: (q) => `https://anixtv.me/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
   { site: 'Anime SOGO', url: (q) => `https://animesogo.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
   { site: 'Anichi', url: (q) => `https://anichi.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
+  { site: 'Miruro', url: (q) => `https://www.miruro.to/search?query=${encodeURIComponent(q)}&type=ANIME&sort=POPULARITY_DESC`, licensed: false },
 ];
 
 export function searchLinks(title) {
