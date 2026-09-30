@@ -46,6 +46,17 @@ export default function Masthead({
   const bellRef = useRef(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [seen, setSeen] = useState(loadSeen);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Drives the header's frosted fill + divider (see .masthead.scrolled):
+  // transparent at the top of the page, only separated from it once
+  // something is actually scrolling underneath.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // "/" jumps to search, like GitHub/Slack — skipped while already typing
   // anywhere else, so it never hijacks a literal "/" character.
@@ -181,7 +192,7 @@ export default function Masthead({
   const showDropdown = open && term.trim().length >= MIN_CHARS;
 
   return (
-    <header className="masthead">
+    <header className={`masthead${scrolled ? ' scrolled' : ''}`}>
       <div className="wrap mast">
         <div className="logo">
           <b>Tsugi</b>

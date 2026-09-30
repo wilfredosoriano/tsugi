@@ -182,19 +182,31 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    element, does not reproduce it. */
 .masthead {
   position: sticky; top: 0; z-index: 40;
-  background: rgba(16, 14, 11, 0.4);
+  padding-top: env(safe-area-inset-top);
+  transition: background var(--dur-2) var(--ease);
+}
+/* At rest (page scrolled to the top) the header has no fill, blur or
+   divider at all, so it reads as part of the page rather than a separate
+   bar. The frosted tint + hairline only fade in once content actually
+   scrolls underneath it — see the `scrolled` flag in Masthead.jsx. The
+   blur itself isn't transitioned (Safari can't interpolate
+   backdrop-filter), but the fill fading in over it hides the switch.
+   Never add mask-image here: combined with backdrop-filter it triggers a
+   real compositing glitch (chased through several earlier attempts). */
+.masthead.scrolled {
+  background: rgba(16, 14, 11, 0.55);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  transition: background var(--dur-2) var(--ease);
-  padding-top: env(safe-area-inset-top);
 }
-:root[data-theme='light'] .masthead {
-  background: rgba(250, 248, 242, 0.45);
+:root[data-theme='light'] .masthead.scrolled {
+  background: rgba(250, 248, 242, 0.6);
 }
 .masthead::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
   background: var(--border); pointer-events: none;
+  opacity: 0; transition: opacity var(--dur-2) var(--ease);
 }
+.masthead.scrolled::after { opacity: 1; }
 /* One row on desktop — logo, search, actions — so the sticky header costs
    ~68px of screen instead of stacking three rows. On phones the search
    drops to its own full-width row underneath (see the 720px block). */
