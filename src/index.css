@@ -1225,6 +1225,10 @@ footer { border-top: 1px solid var(--border); margin-top: 52px; padding: 24px 0 
   .ask-head { padding: 16px 16px 0; }
   .ask-body { padding: 14px 16px 16px; }
   .ask-body textarea { font-size: 16px; }
+  /* iOS Safari zooms the whole page in when any form control under 16px
+     gets focus — same fix as the ask textarea and genre-picker search,
+     applied to every other field that was still below it. */
+  .searchbar input, .sortctl select, .progress-num, .transfer-body textarea { font-size: 16px; }
   .btn, .filter-btn, .filter-chip, .sortctl select { min-height: 44px; }
 
   .scrim { align-items: flex-end; padding: 0; }
