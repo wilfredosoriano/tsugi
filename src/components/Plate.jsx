@@ -1,19 +1,24 @@
 import { useState } from 'react';
-import { Bookmark, Clock } from 'lucide-react';
+import { Bookmark, Clock, Star } from 'lucide-react';
 import { starParts, displayTitle, cleanText } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import { useInView } from '../hooks/useInView.js';
+import Stars from './Stars.jsx';
 
-/** One anime as a poster card. `rank` is only passed for ranked AI results. */
-export default function Plate({ media, rank, index = 0, caption, saved, onOpen, onSave }) {
+/** One anime as a poster card. */
+export default function Plate({ media, index = 0, saved, onOpen, onSave }) {
   const [loaded, setLoaded] = useState(false);
   const [ref, inView] = useInView();
   const title = displayTitle(media);
   const stars = starParts(media.averageScore);
-  const excerpt = !caption && media.description ? cleanText(media.description) : '';
+  const excerpt = media.description ? cleanText(media.description) : '';
 
   return (
-    <div ref={ref} className={`plate${inView ? ' revealed' : ''}`} style={{ '--i': index % 12 }}>
+    <div
+      ref={ref}
+      className={`plate${inView ? ' revealed' : ''}`}
+      style={{ '--i': index % 12, '--tilt': index % 2 ? '1.5deg' : '-1.5deg' }}
+    >
       <div className="cover-wrap">
         <button
           className="imgbox"
@@ -34,18 +39,14 @@ export default function Plate({ media, rank, index = 0, caption, saved, onOpen, 
           )}
         </button>
 
-        {rank != null && <span className="rank">{String(rank + 1).padStart(2, '0')}</span>}
+        <div className="plate-gradient">
+          <h4>{title}</h4>
+          {media.title.native && <div className="native">{media.title.native}</div>}
+        </div>
 
-        {media.nextAiringEpisode && (
-          <span className="next-ep">
-            <Clock size={10} strokeWidth={2.5} />
-            Ep {media.nextAiringEpisode.episode} · {formatAiring(media.nextAiringEpisode.airingAt)}
-          </span>
-        )}
-
-        {media.watchStatus === 'watching' && media.progress > 0 && (
-          <span className="progress-badge">
-            Ep {media.progress}{media.episodes ? `/${media.episodes}` : ''}
+        {stars && (
+          <span className="score" title={`${stars.raw}/100`}>
+            <Star size={12} strokeWidth={2.5} fill="currentColor" aria-hidden="true" /> {stars.value}
           </span>
         )}
 
@@ -55,31 +56,34 @@ export default function Plate({ media, rank, index = 0, caption, saved, onOpen, 
           aria-pressed={saved}
           aria-label={`${saved ? 'Remove' : 'Add'} ${title} ${saved ? 'from' : 'to'} want-to-watch`}
         >
-          <Bookmark size={14} strokeWidth={2} fill={saved ? 'currentColor' : 'none'} />
+          <Bookmark size={16} strokeWidth={2.5} fill={saved ? 'currentColor' : 'none'} />
         </button>
       </div>
 
-      <div>
-        <h4>{title}</h4>
-        {media.title.native && <div className="native">{media.title.native}</div>}
-      </div>
-
-      <div className="meta">
-        {stars ? (
-          <>
-            <span className="stars" title={`${stars.raw}/100`}>{stars.glyphs}</span>
-            <span className="num">{stars.value}</span>
-          </>
-        ) : (
-          <span className="num">unrated</span>
+      <div className="plate-info">
+        {(media.nextAiringEpisode || (media.watchStatus === 'watching' && media.progress > 0)) && (
+          <div className="plate-badges">
+            {media.nextAiringEpisode && (
+              <span className="badge next-ep">
+                <Clock size={12} strokeWidth={2.5} aria-hidden="true" />
+                Ep {media.nextAiringEpisode.episode} · {formatAiring(media.nextAiringEpisode.airingAt)}
+              </span>
+            )}
+            {media.watchStatus === 'watching' && media.progress > 0 && (
+              <span className="badge progress-badge">
+                Ep {media.progress}{media.episodes ? `/${media.episodes}` : ''}
+              </span>
+            )}
+          </div>
         )}
-        <span className="num">
-          {media.episodes ? `${media.episodes} ep` : (media.format || '').replace('_', ' ')}
-        </span>
-        {media.seasonYear && <span className="num">{media.seasonYear}</span>}
+        <div className="meta">
+          {stars ? <Stars score={media.averageScore} /> : <span className="num">unrated</span>}
+          <span className="num">
+            {media.episodes ? `${media.episodes} ep` : (media.format || '').replace('_', ' ')}
+          </span>
+          {media.seasonYear && <span className="num">{media.seasonYear}</span>}
+        </div>
       </div>
-
-      {caption && <p className="caption">{caption}</p>}
     </div>
   );
 }

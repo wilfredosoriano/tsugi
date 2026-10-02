@@ -4,6 +4,7 @@ import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
 import { fetchRecommendations, fetchRelations } from '../lib/anilist.js';
+import Stars from './Stars.jsx';
 
 const RELATION_ORDER = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative', 'Full story', 'Summary', 'Compilation', 'Contains'];
 
@@ -129,7 +130,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             )}
           </div>
           <button className="x" onClick={onClose} ref={closeRef} aria-label="Close details">
-            <X size={18} strokeWidth={2.25} />
+            <X size={18} strokeWidth={2.75} />
           </button>
         </div>
 
@@ -138,12 +139,12 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             <img className="cover" src={media.coverImage.large} alt={`Cover art for ${title}`} />
             {stars && (
               <div style={{ marginTop: 12 }}>
-                <span className="stars">{stars.glyphs}</span>{' '}
+                <Stars score={media.averageScore} />{' '}
                 <span className="num">{stars.value} · {stars.raw}/100</span>
               </div>
             )}
             {onSave && !saved && (
-              <button className="btn ghost sheet-save" onClick={() => onSave(media)}>
+              <button className="btn secondary sheet-save" onClick={() => onSave(media)}>
                 <Plus size={15} /> Want to watch
               </button>
             )}
@@ -206,7 +207,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
             )}
             {trailerUrl && (
               <a
-                className="btn ghost sheet-save trailer-link"
+                className="btn secondary sheet-save trailer-link"
                 href={trailerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -284,7 +285,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                 >
                   <span className="related-tag">{label}</span>
                   <img src={m.coverImage.large} alt="" loading="lazy" />
-                  <span>{displayTitle(m)}</span>
+                  <span className="related-title">{displayTitle(m)}</span>
                 </button>
               ))}
             </div>
@@ -303,7 +304,7 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   aria-label={`Open details for ${displayTitle(m)}`}
                 >
                   <img src={m.coverImage.large} alt="" loading="lazy" />
-                  <span>{displayTitle(m)}</span>
+                  <span className="related-title">{displayTitle(m)}</span>
                 </button>
               ))}
             </div>

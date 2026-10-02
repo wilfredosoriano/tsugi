@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Plus, Check, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { starParts, cleanText, displayTitle } from '../lib/format.js';
+import Stars from './Stars.jsx';
+import SpeedLines from './SpeedLines.jsx';
+import Petals from './Petals.jsx';
 import { formatAiring } from '../lib/airing.js';
 
 const INTERVAL_MS = 7000;
@@ -43,6 +46,7 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
   const go = (n) => setI(((n % items.length) + items.length) % items.length);
 
   return (
+    <div className="hero-frame">
     <div className="hero" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {items.map((m, idx) => (
         <div
@@ -56,12 +60,16 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
         />
       ))}
       <div className="hero-scrim" />
+      <SpeedLines />
+      <span className="hero-kanji" aria-hidden="true">つぎ</span>
+      <span className="halftone corner-tr" aria-hidden="true" />
+      <Petals />
 
       <div className="hero-body">
-        <p className="mono hero-eyebrow">Featured today</p>
+        <p className="badge hero-eyebrow">Featured today</p>
         <h2 className="display hero-title">{title}</h2>
         <div className="hero-meta">
-          {stars && <span className="stars">{stars.glyphs}</span>}
+          {stars && <Stars score={media.averageScore} />}
           {media.seasonYear && <span className="num">{media.seasonYear}</span>}
           {media.episodes && <span className="num">{media.episodes} episodes</span>}
           {media.nextAiringEpisode && (
@@ -81,7 +89,7 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
             <Play size={15} fill="currentColor" /> View details
           </button>
           {onSave && (
-            <button className="btn ghost" onClick={() => onSave(media)}>
+            <button className="btn secondary" onClick={() => onSave(media)}>
               {saved ? <><Check size={15} /> Saved</> : <><Plus size={15} /> Want to watch</>}
             </button>
           )}
@@ -111,6 +119,7 @@ export default function Hero({ items, onOpen, onSave, isSaved }) {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

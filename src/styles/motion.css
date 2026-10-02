@@ -1,0 +1,54 @@
+/* ── keyframes ────────────────────────────────────────────── */
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+}
+@keyframes skel-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
+@keyframes save-pop { 0% { transform: scale(0.7); } 100% { transform: scale(1); } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: translateY(6px) scale(0.94); } }
+@keyframes petal-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translate3d(var(--drift), 560px, 0) rotate(360deg); opacity: 0; }
+}
+@keyframes word-rise { from { transform: translateY(105%); } to { transform: translateY(0); } }
+@keyframes spring-in {
+  0% { opacity: 0; transform: translateY(26px) scale(0.9); }
+  60% { opacity: 1; transform: translateY(-5px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── word-by-word heading reveal ──────────────────────────── */
+/* Each word rises out of its own mask (the overflow:hidden wrapper), one
+   after another (~7 frames apart). Hidden only until the heading scrolls
+   into view, so it can never get stuck invisible. */
+.rv-word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.12em; margin-bottom: -0.12em; }
+.rv-inner { display: inline-block; }
+.reveal:not(.in) .rv-inner { transform: translateY(105%); }
+.reveal.in .rv-inner { animation: word-rise 0.5s var(--ease) both; animation-delay: calc(min(var(--w), 9) * 230ms); }
+
+/* ── cards ────────────────────────────────────────────────── */
+.plate { opacity: 0; transform: translateY(26px) scale(0.94); transition: opacity 0.4s var(--ease), transform 0.5s var(--spring); transition-delay: calc(var(--i, 0) * 45ms); }
+.plate.revealed { opacity: 1; transform: none; }
+.plate.revealed:hover, .plate.revealed:focus-within { transition-delay: 0s; }
+
+/* Recommendation picks pop in one after another, with an overshoot. */
+.pop-in { animation: spring-in 0.55s var(--spring) both; animation-delay: calc(var(--i, 0) * 100ms); }
+
+/* ── reduced motion: instant state changes, nothing decorative moves ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .petals { display: none; }
+  .reveal:not(.in) .rv-inner { transform: none; }
+  .plate { opacity: 1; transform: none; }
+  .pop-in { opacity: 1; transform: none; }
+  .btn:hover:not(:disabled), .pill:hover, .icon-btn:hover, .filter-btn:hover, .genre-chip:hover { transform: none; }
+  .plate:hover .cover-wrap, .plate:focus-within .cover-wrap { transform: none; }
+}

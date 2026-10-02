@@ -4,6 +4,7 @@ import { quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
+import Stars from './Stars.jsx';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
@@ -46,17 +47,6 @@ export default function Masthead({
   const bellRef = useRef(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [seen, setSeen] = useState(loadSeen);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Drives the header's frosted fill + divider (see .masthead.scrolled):
-  // transparent at the top of the page, only separated from it once
-  // something is actually scrolling underneath.
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   // "/" jumps to search, like GitHub/Slack — skipped while already typing
   // anywhere else, so it never hijacks a literal "/" character.
@@ -192,11 +182,11 @@ export default function Masthead({
   const showDropdown = open && term.trim().length >= MIN_CHARS;
 
   return (
-    <header className={`masthead${scrolled ? ' scrolled' : ''}`}>
+    <header className="masthead">
       <div className="wrap mast">
         <div className="logo">
+          <span className="logo-tile" aria-hidden="true">次</span>
           <b>Tsugi</b>
-          <span className="kanji">次</span>
         </div>
 
         <div className="search-wrap" ref={wrapRef}>
@@ -251,7 +241,7 @@ export default function Masthead({
                     <span className="live-search-info">
                       <span className="live-search-title">{title}</span>
                       <span className="meta">
-                        {stars && <span className="stars">{stars.glyphs}</span>}
+                        {stars && <Stars score={m.averageScore} />}
                         {m.seasonYear && <span className="num">{m.seasonYear}</span>}
                         {m.format && <span className="num">{m.format.replace('_', ' ')}</span>}
                       </span>

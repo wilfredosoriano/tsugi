@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════
+   TSUGI — neo-brutalist manga
+   Single source of truth for color, type, shape and depth.
+   Everything else reads these; no hardcoded colors elsewhere.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* palette */
+  --paper: #f5f5f8;
+  --sumi: #1a1626;
+  --sumi-soft: #2a2440;
+  --sakura: #ff4f8b;
+  --sakura-deep: #d6266a;
+  --sakura-pale: #ffd3e2;
+  --indigo: #4b3cff;
+  --sky: #5fd4ff;
+  --signal: #ffd23f;
+  --tone: #c9c7d6;
+  --white: #ffffff;
+  --ink-dark: #0d0a16;
+
+  /* type */
+  --font-display: 'Dela Gothic One', 'Zen Kaku Gothic New', sans-serif;
+  --font-body: 'Zen Kaku Gothic New', system-ui, -apple-system, sans-serif;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-28: 28px;
+  --fs-40: 40px;
+  --fs-64: 64px;
+
+  /* shape */
+  --r-pill: 999px;
+  --r-card: 14px;
+  --r-ctl: 18px;
+  --r-panel: 26px;
+  --bw: 3px;
+  --bw-sm: 2px;
+  --gutter: 24px;
+
+  /* hard offsets (shrink on phones, see the media block below) */
+  --off-sm: 4px;
+  --off-md: 6px;
+  --off-lg: 8px;
+  --off-modal: 20px;
+  --ask-overlap: 80px;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-1: 0.15s;
+  --dur-2: 0.3s;
+
+  /* semantic — light */
+  --bg: var(--paper);
+  --surface: var(--white);
+  --surface-2: #ebeaf2;
+  --text: var(--sumi);
+  --text-soft: var(--sumi-soft);
+  --text-muted: #5b5675;
+  --placeholder: #6b6785;
+  --ink: var(--sumi);          /* borders + decorative shadows */
+  --ink-ui: var(--sumi);       /* borders of inputs/controls (>=3:1 in both themes) */
+  --accent: var(--sakura-deep);
+  --accent-text: var(--sakura-deep);
+  --on-accent: var(--white);
+  --selected: var(--sakura-pale);
+  --on-selected: var(--sumi);
+  --scrim: rgba(26, 22, 38, 0.6);
+  --dots: var(--sumi);
+
+  /* shadow colors by role — dark overrides these, the offsets stay shared */
+  --sc-sm: var(--ink);
+  --sc-md: var(--ink);
+  --sc-lg: var(--ink);
+  --sc-btn: var(--ink);
+  --sc-modal: var(--ink);
+
+  --sh-sm: var(--off-sm) var(--off-sm) 0 var(--sc-sm);
+  --sh-md: var(--off-md) var(--off-md) 0 var(--sc-md);
+  --sh-lg: var(--off-lg) var(--off-lg) 0 var(--sc-lg);
+  --sh-btn: var(--off-md) var(--off-md) 0 var(--sc-btn);
+  --sh-btn-hover: calc(var(--off-md) + 2px) calc(var(--off-md) + 2px) 0 var(--sc-btn);
+  --sh-accent: var(--off-md) var(--off-md) 0 var(--sakura);
+  --sh-modal: var(--off-modal) var(--off-modal) 0 var(--sc-modal);
+
+  color-scheme: light;
+}
+
+/* dark: surfaces step up from sumi; borders go near-black; the bigger hard
+   shadows pick up sakura so they stay visible against a dark page. */
+:root[data-theme='dark'] {
+  --bg: var(--sumi);
+  --surface: var(--sumi-soft);
+  --surface-2: #35304f;
+  --text: var(--paper);
+  --text-soft: #dcdae8;
+  --text-muted: #b3b0c6;
+  --placeholder: #a29fba;
+  --ink: var(--ink-dark);
+  --ink-ui: #8d89a6;
+  --accent: var(--sakura-deep);
+  --accent-text: var(--sakura);
+  --selected: var(--sakura-pale);
+  --on-selected: var(--sumi);
+  --scrim: rgba(13, 10, 22, 0.75);
+  --dots: var(--paper);
+
+  --sc-md: var(--sakura-deep);
+  --sc-lg: var(--sakura);
+  --sc-btn: var(--sakura);
+  --sc-modal: var(--sakura-deep);
+
+  color-scheme: dark;
+}
+
+/* Follow the system when the user hasn't picked a theme (useTheme always
+   writes data-theme once it runs, so this only covers the pre-hydration
+   frame and any environment where the attribute is absent). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: var(--sumi);
+    --surface: var(--sumi-soft);
+    --surface-2: #35304f;
+    --text: var(--paper);
+    --text-soft: #dcdae8;
+    --text-muted: #b3b0c6;
+    --placeholder: #a29fba;
+    --ink: var(--ink-dark);
+    --ink-ui: #8d89a6;
+    --accent-text: var(--sakura);
+    --scrim: rgba(13, 10, 22, 0.75);
+    --dots: var(--paper);
+    --sc-md: var(--sakura-deep);
+    --sc-lg: var(--sakura);
+    --sc-btn: var(--sakura);
+    --sc-modal: var(--sakura-deep);
+    color-scheme: dark;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 12px;
+    --off-sm: 3px;
+    --off-md: 3px;
+    --off-lg: 3px;
+    --off-modal: 8px;
+    --ask-overlap: 40px;
+  }
+}

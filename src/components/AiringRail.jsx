@@ -3,16 +3,14 @@ import { displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 
 /**
- * Rail of episodes airing soon — a flat list of {media, episode, airingAt}
- * (from fetchAiringForIds or the weekly calendar), not bare media objects,
- * so it gets its own compact card instead of reusing Plate/Grid. `vertical`
- * switches from the horizontally-scrolling mobile rail to a stacked
- * sidebar list (same cards either way) — used for the desktop left-column
- * placement.
+ * Scroll-snap strip of episodes airing soon — a flat list of
+ * {media, episode, airingAt} (from fetchAiringForIds or the weekly
+ * calendar), not bare media objects, so it gets its own compact card
+ * instead of reusing Plate/Grid.
  */
-export default function AiringRail({ items, onOpen, vertical = false }) {
+export default function AiringRail({ items, onOpen }) {
   return (
-    <div className={vertical ? 'airing-list-vertical' : 'airing-scroll-rail'}>
+    <div className="airing-scroll-rail">
       {items.map(({ media, episode, airingAt }) => (
         <button
           key={media.id}
@@ -23,7 +21,7 @@ export default function AiringRail({ items, onOpen, vertical = false }) {
           <div>
             <h4>{displayTitle(media)}</h4>
             <span className="airing-badge">
-              <Clock size={11} strokeWidth={2.5} />
+              <Clock size={12} strokeWidth={2.5} aria-hidden="true" />
               Ep {episode} · {formatAiring(airingAt)}
             </span>
           </div>

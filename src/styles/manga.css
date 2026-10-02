@@ -1,0 +1,36 @@
+/* ── manga layer: used sparingly, accents not clutter ─────── */
+
+/* Halftone screentone. Pair with a position + size on the element; the dots
+   fade out via a mask so they never form a hard rectangle. (No
+   backdrop-filter anywhere near these — mask + backdrop-filter glitches.) */
+.halftone {
+  position: absolute; pointer-events: none;
+  background-image: radial-gradient(circle, var(--dots) 1.5px, transparent 2px);
+  background-size: 14px 14px; opacity: 0.16;
+  -webkit-mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+}
+.halftone.corner-tr { top: -40px; right: -40px; width: 240px; height: 240px; }
+.halftone.corner-bl { bottom: -40px; left: -40px; width: 240px; height: 240px; }
+.hero .halftone { opacity: 0.35; background-image: radial-gradient(circle, var(--white) 1.5px, transparent 2px); z-index: 1; }
+
+/* Speed lines: one reusable radial burst (see SpeedLines.jsx). */
+.speed-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; color: var(--white); }
+.speed-lines line { stroke: currentColor; stroke-linecap: butt; }
+.hero .speed-lines { z-index: 0; opacity: 0.22; mix-blend-mode: normal; }
+.ask .speed-lines { z-index: 0; color: var(--sakura); opacity: 0.16; }
+
+/* Large outlined kana behind the hero copy. */
+.hero-kanji {
+  position: absolute; right: 90px; top: 8%; z-index: 0; pointer-events: none; user-select: none;
+  font-family: var(--font-display); font-size: clamp(120px, 20vw, 280px); line-height: 1; letter-spacing: 0.04em;
+  color: transparent; -webkit-text-stroke: 3px var(--white); opacity: 0.2;
+}
+
+/* Sakura petals, hero only. */
+.petals { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+.petal {
+  position: absolute; top: -24px; left: var(--x); width: var(--s); height: calc(var(--s) * 0.7);
+  background: var(--sakura); border: 2px solid var(--sumi); border-radius: 80% 0 80% 0;
+  opacity: 0.9; animation: petal-fall var(--d) linear var(--delay) infinite;
+}

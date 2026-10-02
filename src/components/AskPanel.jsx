@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
+import SpeedLines from './SpeedLines.jsx';
 import { useTypedPlaceholder } from '../hooks/useTypedPlaceholder.js';
 
 const EXAMPLES = [
@@ -15,8 +17,20 @@ export default function AskPanel({ value, onChange, onAsk, busy }) {
 
   const canAsk = !busy && value.trim().length > 0;
 
+  // Starts at two rows and grows with the text, up to about six.
+  const textareaRef = useRef(null);
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 190)}px`;
+    el.style.overflowY = el.scrollHeight > 190 ? 'auto' : 'hidden';
+  }, [value]);
+
   return (
     <section className="ask">
+      <SpeedLines />
+      <span className="halftone corner-bl" aria-hidden="true" />
       <div className="ask-head">
         <span className="n" aria-hidden="true">問</span>
         <div>
@@ -31,6 +45,7 @@ export default function AskPanel({ value, onChange, onAsk, busy }) {
             ends instead of floating below the suggestion chips. */}
         <div className="ask-composer">
           <textarea
+            ref={textareaRef}
             rows={2}
             value={value}
             onChange={(e) => onChange(e.target.value)}

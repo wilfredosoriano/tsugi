@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { X } from 'lucide-react';
 import Masthead from './components/Masthead.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
@@ -13,6 +13,9 @@ import AiringRail from './components/AiringRail.jsx';
 import AiringCalendar from './components/AiringCalendar.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead } from './components/Grid.jsx';
 import BrowseFilters from './components/BrowseFilters.jsx';
+import PicksShowcase from './components/PicksShowcase.jsx';
+import StatsPanel from './components/StatsPanel.jsx';
+import TabBar from './components/TabBar.jsx';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS, SEASONS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
@@ -21,6 +24,7 @@ import { useAuth } from './hooks/useAuth.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
+import { useMediaQuery } from './hooks/useMediaQuery.js';
 import { displayTitle } from './lib/format.js';
 import { WATCH_STATUSES } from './lib/watchStatus.js';
 
@@ -91,6 +95,10 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [genrePickerOpen, setGenrePickerOpen] = useState(false);
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false);
+  const [askSheetOpen, setAskSheetOpen] = useState(false);
+  const isPhone = useMediaQuery('(max-width: 767px)');
+  // Phones page the grid with a "Show more" button instead of infinite scroll.
+  const [shownCount, setShownCount] = useState(18);
 
   // Grid cards pass the clicked cover's own rect so the detail sheet can
   // visually grow out of it (see DetailSheet's FLIP transition); every
@@ -392,8 +400,27 @@ export default function App() {
     }
   }, [genres, season, seasonYear, search, sort, page]);
 
-  const canLoadMore = hasMore && gridState === 'ready' && !loadingMore;
+  const canLoadMore = hasMore && gridState === 'ready' && !loadingMore && !isPhone;
   const sentinelRef = useInfiniteScroll(loadMore, canLoadMore);
+
+  useEffect(() => {
+    setShownCount(18);
+  }, [genres, season, seasonYear, search, sort]);
+
+  const visibleGridItems = isPhone ? gridItems.slice(0, shownCount) : gridItems;
+  const canShowMore = isPhone && (shownCount < gridItems.length || hasMore);
+  const onShowMore = async () => {
+    const next = shownCount + 18;
+    if (next > gridItems.length && hasMore && !loadingMore) await loadMore();
+    setShownCount(next);
+  };
+
+  useEffect(() => {
+    if (!askSheetOpen) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setAskSheetOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [askSheetOpen]);
 
   const seasonLabel = [season ? SEASONS.find((s) => s.value === season)?.label : '', seasonYear]
     .filter(Boolean)
@@ -517,6 +544,10 @@ export default function App() {
     }
   }
 
+  const showHero = featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading');
+  const showAiringWeek = weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0);
+  const showStats = saved.length > 0 || completedAllTime > 0;
+
   const shownPickIds = answer ? new Set(answer.picks.map((m) => m.id)) : null;
   const hasMorePicks = askPool && shownPickIds
     ? askPool.some((m) => !shownPickIds.has(m.id) && m._core !== false)
@@ -540,80 +571,71 @@ export default function App() {
         airingAlerts={myAiringSoonState === 'ready' ? myAiringSoon : []}
       />
 
-      {featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading') && (
+      {showHero && (
         <div className="wrap hero-wrap">
           {featured.length > 0
             ? <Hero items={featured} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
-            : <div className="hero skel-hero" aria-hidden="true" />}
+            : <div className="hero-frame"><div className="hero skel-hero" aria-hidden="true" /></div>}
         </div>
       )}
 
-      <main className="wrap">
-        {(myAiringSoonState === 'ready' && myAiringSoon.length > 0) || (weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0)) ? (
-          <aside className="airing-desktop">
-            {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
-              <div className="airing-block">
-                <SectionHead title="Your shows airing soon" count={`${myAiringSoon.length}`} />
-                <AiringRail items={myAiringSoon} onOpen={openMedia} vertical />
-              </div>
-            )}
-            {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
-              <div className="airing-block">
-                <SectionHead title="Airing this week" />
-                <AiringCalendar days={weeklyAiring} onOpen={openMedia} vertical />
-              </div>
-            )}
-          </aside>
-        ) : null}
-
-        <div className="main-col">
+      <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
         <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
+      </div>
 
-        {completedAllTime > 0 && (
-          <button className="completion-stat" onClick={() => setHistoryOpen(true)}>
-            <Trophy size={15} strokeWidth={2.25} />
-            <strong>{completedAllTime}</strong> anime completed all-time
-            {completedThisYear > 0 && <span className="completion-stat-year">· {completedThisYear} in {currentYear}</span>}
-          </button>
-        )}
-
-        {saved.length > 0 && (
-          <div id="saved" className="saved-rail">
-            <SectionHead title="Your want-to-watch" count={`${visibleSaved.length} of ${saved.length}`}>
-              <div className="status-filter">
-                <button className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>
-                  All
-                </button>
-                {WATCH_STATUSES.map((s) => (
-                  <button
-                    key={s.value}
-                    className={statusFilter === s.value ? 'active' : ''}
-                    onClick={() => setStatusFilter(s.value)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </SectionHead>
-            {visibleSaved.length > 0 ? (
-              <Grid items={visibleSaved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal />
-            ) : (
-              <Note>Nothing with that status yet.</Note>
-            )}
-          </div>
-        )}
-
+      <main className="wrap home">
         {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
-          <section className="airing-mobile">
+          <section className="panel">
             <SectionHead title="Your shows airing soon" count={`${myAiringSoon.length}`} />
             <AiringRail items={myAiringSoon} onOpen={openMedia} />
           </section>
         )}
 
-        {weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0) && (
-          <section className="airing-mobile">
-            <SectionHead title="Airing this week" />
-            <AiringCalendar days={weeklyAiring} onOpen={openMedia} />
+        {(showAiringWeek || showStats) && (
+          <div className={`home-row${showAiringWeek && showStats ? '' : ' single'}`}>
+            {showAiringWeek && (
+              <section className="panel">
+                <SectionHead title="Airing this week" />
+                <AiringCalendar days={weeklyAiring} onOpen={openMedia} />
+              </section>
+            )}
+            <StatsPanel
+              saved={saved}
+              completedAllTime={completedAllTime}
+              completedThisYear={completedThisYear}
+              currentYear={currentYear}
+              onOpenHistory={() => setHistoryOpen(true)}
+            />
+          </div>
+        )}
+
+        {saved.length > 0 && (
+          <section id="saved" className="grid-scroll-anchor">
+            <SectionHead title="Your want-to-watch" count={`${visibleSaved.length} of ${saved.length}`}>
+              <div className="status-filter">
+                <button className={`pill${statusFilter === 'all' ? ' on' : ''}`} aria-pressed={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>
+                  All
+                </button>
+                {WATCH_STATUSES.map((st) => (
+                  <button
+                    key={st.value}
+                    className={`pill${statusFilter === st.value ? ' on' : ''}`}
+                    aria-pressed={statusFilter === st.value}
+                    onClick={() => setStatusFilter(st.value)}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </SectionHead>
+            {visibleSaved.length > 0 ? (
+              <Grid items={visibleSaved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal label="want-to-watch" />
+            ) : (
+              <Note>
+                Nothing is marked {WATCH_STATUSES.find((st) => st.value === statusFilter)?.label.toLowerCase()} yet.
+                Open a title and change its status.
+              </Note>
+            )}
           </section>
         )}
 
@@ -625,7 +647,7 @@ export default function App() {
             />
             {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}
             {becauseSavedState === 'error' && (
-              <Note error>Couldn’t build recommendations from your list right now.</Note>
+              <Note error>Couldn’t build recommendations from your list right now. Try again in a moment.</Note>
             )}
             {becauseSaved && (
               <>
@@ -635,7 +657,7 @@ export default function App() {
                     <strong>Ranked without AI.</strong> {becauseSaved.degraded}
                   </Note>
                 )}
-                <Grid
+                <PicksShowcase
                   items={becauseSaved.picks}
                   ranked={becauseSaved.ranked}
                   onOpen={openMedia}
@@ -665,7 +687,7 @@ export default function App() {
                 <strong>Ranked without AI.</strong> {answer.degraded}
               </Note>
             )}
-            <Grid
+            <PicksShowcase
               items={answer.picks}
               ranked={answer.ranked}
               onOpen={openMedia}
@@ -675,7 +697,7 @@ export default function App() {
 
             {hasMorePicks && (
               <div className="refine">
-                <button className="btn ghost" onClick={moreLikeThis} disabled={asking}>
+                <button className="btn secondary" onClick={moreLikeThis} disabled={asking}>
                   More like this
                 </button>
               </div>
@@ -683,47 +705,91 @@ export default function App() {
           </section>
         )}
 
-        <div ref={gridSectionRef} className="grid-scroll-anchor" />
-        <SectionHead
-          title={gridTitle}
-          count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
-        />
-        <BrowseFilters
-          genres={genres}
-          seasonLabel={seasonLabel}
-          sort={sort}
-          search={search}
-          onSort={setSort}
-          onOpenGenrePicker={() => setGenrePickerOpen(true)}
-          onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
-          onClearFilters={() => { onApplyGenres([]); onApplySeason(null, null); }}
-          onClearSearch={() => onSearch('')}
-        />
+        <section ref={gridSectionRef} className="grid-scroll-anchor">
+          <div className="panel trending-head">
+            <SectionHead
+              title={gridTitle}
+              count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
+            />
+            <BrowseFilters
+              genres={genres}
+              seasonLabel={seasonLabel}
+              sort={sort}
+              search={search}
+              onSort={setSort}
+              onOpenGenrePicker={() => setGenrePickerOpen(true)}
+              onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
+              onClearFilters={() => { onApplyGenres([]); onApplySeason(null, null); }}
+              onClearSearch={() => onSearch('')}
+            />
+          </div>
 
-        {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
-        {gridState === 'error' && (
-          <Note error>
-            Couldn’t reach the server — {gridError}{' '}
-            <button className="retry-link" onClick={() => load({ genres, season, seasonYear, search, sort })}>Try again</button>
-          </Note>
-        )}
-        {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
-          <>
-            <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
-              <Grid items={gridItems} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
-            </div>
-            {hasMore && (
-              <div className="more" ref={sentinelRef}>
-                {loadingMore && <Loading>Loading more</Loading>}
+          {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
+          {gridState === 'error' && (
+            <Note error>
+              Couldn’t reach the server — {gridError}{' '}
+              <button className="retry-link" onClick={() => load({ genres, season, seasonYear, search, sort })}>Try again</button>
+            </Note>
+          )}
+          {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
+            <>
+              <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
+                <Grid items={visibleGridItems} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
               </div>
-            )}
-          </>
-        )}
-        {gridState === 'ready' && gridItems.length === 0 && (
-          <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
-        )}
-        </div>
+              {!isPhone && hasMore && (
+                <div className="more" ref={sentinelRef}>
+                  {loadingMore && <Loading>Loading more</Loading>}
+                </div>
+              )}
+              {canShowMore && (
+                <div className="more">
+                  <button className="btn" onClick={onShowMore} disabled={loadingMore}>
+                    {loadingMore ? 'Loading…' : 'Show more'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          {gridState === 'ready' && gridItems.length === 0 && (
+            <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
+          )}
+        </section>
       </main>
+
+      <TabBar
+        onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onBrowse={() => gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        onAsk={() => setAskSheetOpen(true)}
+        onSaved={() => {
+          const shelf = document.getElementById('saved');
+          if (shelf) shelf.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          else pushToast('Nothing saved yet. Tap the bookmark on any title.');
+        }}
+        onProfile={() => {
+          // The account menu / sign-in button lives in the header; reuse it
+          // rather than duplicating its state here. Without sync enabled
+          // there is no account, so open the list-transfer sheet instead.
+          const trigger = document.querySelector('.header-actions .account-trigger, .header-actions .google-btn');
+          if (trigger) trigger.click();
+          else setTransferOpen(true);
+        }}
+      />
+
+      {askSheetOpen && (
+        <div className="scrim" onClick={(e) => e.target === e.currentTarget && setAskSheetOpen(false)}>
+          <div className="sheet ask-sheet" role="dialog" aria-modal="true" aria-label="Ask for a recommendation">
+            <button className="x" onClick={() => setAskSheetOpen(false)} aria-label="Close">
+              <X size={18} strokeWidth={2.75} />
+            </button>
+            <AskPanel
+              value={question}
+              onChange={setQuestion}
+              onAsk={() => { setAskSheetOpen(false); ask(); }}
+              busy={asking}
+            />
+          </div>
+        </div>
+      )}
 
       {open && (
         <DetailSheet

@@ -127,7 +127,7 @@ export default function ListTransfer({ saved, onImport, onClose }) {
               <button className="btn" onClick={() => copy(moveText)} disabled={saved.length === 0}>
                 {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
               </button>
-              <button className="btn ghost" onClick={() => download(moveText, 'tsugi-want-to-watch')} disabled={saved.length === 0}>
+              <button className="btn secondary" onClick={() => download(moveText, 'tsugi-want-to-watch')} disabled={saved.length === 0}>
                 <Download size={15} /> Download file
               </button>
             </div>
@@ -147,7 +147,7 @@ export default function ListTransfer({ saved, onImport, onClose }) {
               <button className="btn" onClick={() => copy(shareText)} disabled={saved.length === 0}>
                 {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
               </button>
-              <button className="btn ghost" onClick={() => download(shareText, 'tsugi-shared-list')} disabled={saved.length === 0}>
+              <button className="btn secondary" onClick={() => download(shareText, 'tsugi-shared-list')} disabled={saved.length === 0}>
                 <Download size={15} /> Download file
               </button>
             </div>
@@ -168,7 +168,7 @@ export default function ListTransfer({ saved, onImport, onClose }) {
                 : <p className="num">No valid titles found in that text yet.</p>
             )}
             <div className="transfer-actions">
-              <label className="btn ghost file-btn">
+              <label className="btn secondary file-btn">
                 <Upload size={15} /> Choose file
                 <input type="file" accept="application/json" onChange={onFile} hidden />
               </label>

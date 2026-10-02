@@ -32,7 +32,7 @@ export default function CompletedHistory({ completions, onOpenMedia, onClose }) 
             <div key={year} className="history-year">
               <div className="history-year-head">
                 <p className="mono">{year} · {completions[year].length} title{completions[year].length === 1 ? '' : 's'}</p>
-                <button className="btn ghost history-share-btn" onClick={() => setRecapYear(year)}>
+                <button className="btn secondary sm history-share-btn" onClick={() => setRecapYear(year)}>
                   <Share2 size={14} /> Recap
                 </button>
               </div>
