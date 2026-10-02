@@ -46,7 +46,10 @@ main.home {
   /* hero: capped height, 4:5 crop, Ask overlaps the bottom edge */
   .hero-wrap { padding-top: 16px; }
   .hero {
-    height: auto; aspect-ratio: 4 / 5; max-height: 55svh; min-height: 380px;
+    /* 4:5 crop, capped at 55svh. Done with height (not aspect-ratio +
+       max-height), because that combination shrinks the box's width too. */
+    aspect-ratio: auto; min-height: 380px;
+    height: min(calc((100vw - 2 * var(--gutter)) * 1.25), 55svh);
     border-radius: var(--r-card) 0 0 var(--r-card);
     clip-path: polygon(0 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
   }
