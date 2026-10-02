@@ -1,6 +1,11 @@
 /* ── reset + page ─────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+/* iOS home-screen apps (black-translucent status bar): when a screen's
+   content is shorter than the display, iOS anchors position:fixed bottom
+   bars one status-bar height too high. Keeping the page at least that much
+   taller than the viewport avoids it; the inset is 0 in a normal browser. */
+html { min-height: calc(100% + env(safe-area-inset-top)); }
 
 body {
   background: var(--bg);
