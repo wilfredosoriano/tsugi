@@ -1,27 +1,35 @@
 import { Home, Compass, Sparkles, Bookmark, User } from 'lucide-react';
+import { pathFor, navClick } from '../lib/routes.js';
 
-/**
- * Phone-only bottom navigation. The app is a single page, so these scroll to
- * its sections (or open the Ask sheet) rather than navigating anywhere.
- */
-export default function TabBar({ onHome, onBrowse, onAsk, onSaved, onProfile }) {
+const TABS = [
+  { view: 'home', label: 'Home', Icon: Home },
+  { view: 'browse', label: 'Browse', Icon: Compass },
+  null, // Ask sits in the middle
+  { view: 'saved', label: 'Saved', Icon: Bookmark },
+  { view: 'profile', label: 'Profile', Icon: User },
+];
+
+/** Phone-only bottom navigation between the four screens, with Ask raised in the middle. */
+export default function TabBar({ view, onNavigate, onAsk }) {
   return (
     <nav className="tabbar" aria-label="Main">
-      <button className="tabbar-item" onClick={onHome}>
-        <Home size={22} strokeWidth={2.5} aria-hidden="true" /> Home
-      </button>
-      <button className="tabbar-item" onClick={onBrowse}>
-        <Compass size={22} strokeWidth={2.5} aria-hidden="true" /> Browse
-      </button>
-      <button className="tabbar-item tabbar-primary" onClick={onAsk} aria-haspopup="dialog">
-        <span className="tabbar-ask-circle"><Sparkles size={26} strokeWidth={2.5} aria-hidden="true" /></span> Ask
-      </button>
-      <button className="tabbar-item" onClick={onSaved}>
-        <Bookmark size={22} strokeWidth={2.5} aria-hidden="true" /> Saved
-      </button>
-      <button className="tabbar-item" onClick={onProfile}>
-        <User size={22} strokeWidth={2.5} aria-hidden="true" /> Profile
-      </button>
+      {TABS.map((tab) =>
+        tab ? (
+          <a
+            key={tab.view}
+            href={pathFor(tab.view)}
+            className={`tabbar-item${view === tab.view ? ' active' : ''}`}
+            aria-current={view === tab.view ? 'page' : undefined}
+            onClick={(e) => navClick(e, onNavigate, tab.view)}
+          >
+            <tab.Icon size={22} strokeWidth={2.5} aria-hidden="true" /> {tab.label}
+          </a>
+        ) : (
+          <button key="ask" className="tabbar-item tabbar-primary" onClick={onAsk} aria-haspopup="dialog">
+            <span className="tabbar-ask-circle"><Sparkles size={26} strokeWidth={2.5} aria-hidden="true" /></span> Ask
+          </button>
+        )
+      )}
     </nav>
   );
 }

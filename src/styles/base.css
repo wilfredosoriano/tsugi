@@ -77,11 +77,6 @@ input[type='search'], input[type='text'], input[type='number'], textarea, select
   background: var(--white); color: var(--sumi);
   border: var(--bw) solid var(--ink-ui); border-radius: var(--r-ctl);
 }
-:root[data-theme='dark'] input[type='search'],
-:root[data-theme='dark'] input[type='text'],
-:root[data-theme='dark'] input[type='number'],
-:root[data-theme='dark'] textarea,
-:root[data-theme='dark'] select { background: var(--white); color: var(--sumi); }
 ::placeholder { color: var(--placeholder); opacity: 1; }
 input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 4px solid var(--sakura); outline-offset: 2px; }
 
@@ -199,3 +194,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 4px
   animation: toast-in var(--dur-2) var(--spring) both;
 }
 .toast.leaving { animation: toast-out 0.22s var(--ease) both; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.x-back { display: none; }

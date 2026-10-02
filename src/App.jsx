@@ -9,13 +9,14 @@ import GenrePicker from './components/GenrePicker.jsx';
 import SeasonPicker from './components/SeasonPicker.jsx';
 import CompletedHistory from './components/CompletedHistory.jsx';
 import ToastStack from './components/Toast.jsx';
-import AiringRail from './components/AiringRail.jsx';
 import AiringCalendar from './components/AiringCalendar.jsx';
 import { Grid, Skeletons, Loading, Note, SectionHead } from './components/Grid.jsx';
 import BrowseFilters from './components/BrowseFilters.jsx';
 import PicksShowcase from './components/PicksShowcase.jsx';
-import StatsPanel from './components/StatsPanel.jsx';
 import TabBar from './components/TabBar.jsx';
+import SavedScreen from './screens/SavedScreen.jsx';
+import ProfileScreen from './screens/ProfileScreen.jsx';
+import { initialView, pathFor, viewFromPath, VIEW_TITLES } from './lib/routes.js';
 import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS, SEASONS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
@@ -26,7 +27,6 @@ import { useToast } from './hooks/useToast.js';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll.js';
 import { useMediaQuery } from './hooks/useMediaQuery.js';
 import { displayTitle } from './lib/format.js';
-import { WATCH_STATUSES } from './lib/watchStatus.js';
 
 const SORT_VALUES = new Set(SORTS.map((s) => s.value));
 const SEASON_VALUES = new Set(SEASONS.map((s) => s.value));
@@ -57,6 +57,8 @@ export default function App() {
     genres: initialUrl.genres, season: initialUrl.season, seasonYear: initialUrl.seasonYear, search: initialUrl.search,
   });
 
+  const [view, setView] = useState(initialView);
+  const historyView = useRef(view);
   const [genres, setGenres] = useState(initialUrl.genres);
   const [season, setSeason] = useState(initialUrl.season);
   const [seasonYear, setSeasonYear] = useState(initialUrl.seasonYear);
@@ -156,6 +158,14 @@ export default function App() {
     setGenres([]);
     setSeason(null);
     setSeasonYear(null);
+    if (q) setView('browse');
+  }, []);
+
+  const navigate = useCallback((next) => {
+    setView((current) => {
+      if (current === next) window.scrollTo({ top: 0, behavior: 'smooth' });
+      return next;
+    });
   }, []);
 
   /* ── homepage hero: a handful of picks that hold steady all day
@@ -295,41 +305,53 @@ export default function App() {
   }, []);
 
   /* ── keep the URL shareable/bookmarkable ────────────────────── */
+  /* The screen is the path (/, /browse, /saved, /profile). Browse filters
+     only go in the query string on /browse, and ?id= (an open title) works
+     on every screen. */
   useEffect(() => {
     const params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (genres.length) params.set('genre', genres.join(','));
-    if (season) params.set('season', season);
-    if (seasonYear) params.set('year', seasonYear);
-    if (sort !== 'TRENDING_DESC') params.set('sort', sort);
+    if (view === 'browse') {
+      if (search) params.set('search', search);
+      if (genres.length) params.set('genre', genres.join(','));
+      if (season) params.set('season', season);
+      if (seasonYear) params.set('year', seasonYear);
+      if (sort !== 'TRENDING_DESC') params.set('sort', sort);
+    }
     if (open) params.set('id', open.id);
     else if (deepLinkId.current) params.set('id', deepLinkId.current);
     const qs = params.toString();
-    const url = qs ? `?${qs}` : window.location.pathname;
+    const url = `${pathFor(view)}${qs ? `?${qs}` : ''}`;
 
-    // Opening a title pushes a real history entry, so the browser/device
-    // Back button closes it on the first press instead of navigating away
-    // (replaceState alone leaves nothing for Back to undo). Closing it or
-    // changing genre/search/sort just corrects the current entry in place.
+    // Opening a title or switching screens pushes a real history entry, so
+    // Back (button or phone gesture) undoes it instead of leaving the site.
+    // Closing a title or changing filters just corrects the current entry.
     const openId = open ? open.id : null;
-    if (openId != null && openId !== historyOpenId.current) {
+    const viewChanged = view !== historyView.current;
+    if (viewChanged || (openId != null && openId !== historyOpenId.current)) {
       window.history.pushState(null, '', url);
     } else {
       window.history.replaceState(null, '', url);
     }
     historyOpenId.current = openId;
-  }, [search, genres, season, seasonYear, sort, open]);
+    historyView.current = view;
+  }, [view, search, genres, season, seasonYear, sort, open]);
 
-  /* Back/forward should close (or restore) the detail sheet, not just
-     leave it hanging while the URL underneath it changes. */
+  /* Back/forward restores the screen and the open title. Filters are only
+     read back on /browse, so stepping back to another screen doesn't wipe
+     the browse filters you left behind. */
   useEffect(() => {
     const onPopState = () => {
       const s = readUrlState();
-      setSearch(s.search);
-      setGenres(s.genres);
-      setSeason(s.season);
-      setSeasonYear(s.seasonYear);
-      setSort(s.sort);
+      const nextView = viewFromPath(window.location.pathname);
+      historyView.current = nextView;
+      setView(nextView);
+      if (nextView === 'browse') {
+        setSearch(s.search);
+        setGenres(s.genres);
+        setSeason(s.season);
+        setSeasonYear(s.seasonYear);
+        setSort(s.sort);
+      }
       historyOpenId.current = s.id ? Number(s.id) : null;
       if (s.id) {
         fetchById(Number(s.id)).then((media) => { if (media) openMedia(media); }).catch(() => {});
@@ -340,6 +362,17 @@ export default function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  /* A new screen starts at the top, with its own tab title. */
+  const firstView = useRef(true);
+  useEffect(() => {
+    document.title = VIEW_TITLES[view];
+    if (firstView.current) {
+      firstView.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+  }, [view]);
 
   /* ── browse ─────────────────────────────────────────────── */
   const load = useCallback(async ({ genres = [], season = null, seasonYear = null, search = '', sort = 'TRENDING_DESC' }) => {
@@ -546,7 +579,6 @@ export default function App() {
 
   const showHero = featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading');
   const showAiringWeek = weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0);
-  const showStats = saved.length > 0 || completedAllTime > 0;
 
   const shownPickIds = answer ? new Set(answer.picks.map((m) => m.id)) : null;
   const hasMorePicks = askPool && shownPickIds
@@ -556,6 +588,8 @@ export default function App() {
   return (
     <>
       <Masthead
+        view={view}
+        onNavigate={navigate}
         search={search}
         onSearch={onSearch}
         onOpenMedia={openMedia}
@@ -571,209 +605,203 @@ export default function App() {
         airingAlerts={myAiringSoonState === 'ready' ? myAiringSoon : []}
       />
 
-      {showHero && (
-        <div className="wrap hero-wrap">
-          {featured.length > 0
-            ? <Hero items={featured} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
-            : <div className="hero-frame"><div className="hero skel-hero" aria-hidden="true" /></div>}
-        </div>
-      )}
+      {view === 'home' && (
+        <>
+          {showHero && (
+            <div className="wrap hero-wrap">
+              {featured.length > 0
+                ? <Hero items={featured} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
+                : <div className="hero-frame"><div className="hero skel-hero" aria-hidden="true" /></div>}
+            </div>
+          )}
 
-      <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
-        <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
-      </div>
+          <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
+            <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
+          </div>
 
-      <main className="wrap home">
-        {myAiringSoonState === 'ready' && myAiringSoon.length > 0 && (
-          <section className="panel">
-            <SectionHead title="Your shows airing soon" count={`${myAiringSoon.length}`} />
-            <AiringRail items={myAiringSoon} onOpen={openMedia} />
-          </section>
-        )}
+          <main className="wrap home">
+            <h1 className="sr-only">Tsugi</h1>
+            {asking && <Loading>{askStage}</Loading>}
+            {askError && <Note error>{askError}</Note>}
 
-        {(showAiringWeek || showStats) && (
-          <div className={`home-row${showAiringWeek && showStats ? '' : ' single'}`}>
+            {answer && (
+              <section ref={answerSectionRef} className="grid-scroll-anchor">
+                <SectionHead
+                  title={answer.ranked ? 'Recommended for you' : 'Closest in the catalog'}
+                  count={
+                    `${answer.picks.length} picks` +
+                    (answer.reference ? ` · from ${displayTitle(answer.reference)}` : '')
+                  }
+                />
+                {answer.intro && <p className="narration">{answer.intro}</p>}
+                {answer.degraded && (
+                  <Note error>
+                    <strong>Ranked without AI.</strong> {answer.degraded}
+                  </Note>
+                )}
+                <PicksShowcase
+                  items={answer.picks}
+                  ranked={answer.ranked}
+                  onOpen={openMedia}
+                  onSave={onSave}
+                  isSaved={isSaved}
+                />
+
+                {hasMorePicks && (
+                  <div className="refine">
+                    <button className="btn secondary" onClick={moreLikeThis} disabled={asking}>
+                      More like this
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
+
             {showAiringWeek && (
               <section className="panel">
                 <SectionHead title="Airing this week" />
                 <AiringCalendar days={weeklyAiring} onOpen={openMedia} />
               </section>
             )}
-            <StatsPanel
-              saved={saved}
-              completedAllTime={completedAllTime}
-              completedThisYear={completedThisYear}
-              currentYear={currentYear}
-              onOpenHistory={() => setHistoryOpen(true)}
-            />
-          </div>
-        )}
 
-        {saved.length > 0 && (
-          <section id="saved" className="grid-scroll-anchor">
-            <SectionHead title="Your want-to-watch" count={`${visibleSaved.length} of ${saved.length}`}>
-              <div className="status-filter">
-                <button className={`pill${statusFilter === 'all' ? ' on' : ''}`} aria-pressed={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>
-                  All
-                </button>
-                {WATCH_STATUSES.map((st) => (
-                  <button
-                    key={st.value}
-                    className={`pill${statusFilter === st.value ? ' on' : ''}`}
-                    aria-pressed={statusFilter === st.value}
-                    onClick={() => setStatusFilter(st.value)}
-                  >
-                    {st.label}
-                  </button>
-                ))}
+            {becauseSavedReference && becauseSavedState !== 'idle' && (
+              <section>
+                <SectionHead
+                  title={`Because you saved “${displayTitle(becauseSavedReference)}”`}
+                  count={becauseSaved ? `${becauseSaved.picks.length} picks` : null}
+                />
+                {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}
+                {becauseSavedState === 'error' && (
+                  <Note error>Couldn’t build recommendations from your list right now. Try again in a moment.</Note>
+            )}
+                {becauseSaved && (
+                  <>
+                    {becauseSaved.intro && <p className="narration">{becauseSaved.intro}</p>}
+                    {becauseSaved.degraded && (
+                      <Note error>
+                        <strong>Ranked without AI.</strong> {becauseSaved.degraded}
+                      </Note>
+                    )}
+                    <PicksShowcase
+                      items={becauseSaved.picks}
+                      ranked={becauseSaved.ranked}
+                      onOpen={openMedia}
+                      onSave={onSave}
+                      isSaved={isSaved}
+                    />
+                  </>
+            )}
+              </section>
+            )}
+
+
+            <section className="panel browse-cta">
+              <div>
+                <h2 className="panel-title">Looking for something specific?</h2>
+                <p className="profile-text">Browse the whole catalog by genre, season and year.</p>
               </div>
-            </SectionHead>
-            {visibleSaved.length > 0 ? (
-              <Grid items={visibleSaved} onOpen={openMedia} onSave={onSave} isSaved={isSaved} horizontal label="want-to-watch" />
-            ) : (
-              <Note>
-                Nothing is marked {WATCH_STATUSES.find((st) => st.value === statusFilter)?.label.toLowerCase()} yet.
-                Open a title and change its status.
+              <button className="btn" onClick={() => navigate('browse')}>Browse anime</button>
+            </section>
+          </main>
+        </>
+      )}
+
+      {view === 'browse' && (
+        <main className="wrap home screen">
+          <h1 className="sr-only">Browse</h1>
+          <section ref={gridSectionRef} className="grid-scroll-anchor">
+            <div className="panel trending-head">
+              <SectionHead
+                title={gridTitle}
+                count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
+              />
+              <BrowseFilters
+                genres={genres}
+                seasonLabel={seasonLabel}
+                sort={sort}
+                search={search}
+                onSort={setSort}
+                onOpenGenrePicker={() => setGenrePickerOpen(true)}
+                onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
+                onClearFilters={() => { onApplyGenres([]); onApplySeason(null, null); }}
+                onClearSearch={() => onSearch('')}
+              />
+            </div>
+
+            {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
+            {gridState === 'error' && (
+              <Note error>
+                Couldn’t reach the server — {gridError}{' '}
+                <button className="retry-link" onClick={() => load({ genres, season, seasonYear, search, sort })}>Try again</button>
               </Note>
             )}
-          </section>
-        )}
-
-        {becauseSavedReference && becauseSavedState !== 'idle' && (
-          <section>
-            <SectionHead
-              title={`Because you saved “${displayTitle(becauseSavedReference)}”`}
-              count={becauseSaved ? `${becauseSaved.picks.length} picks` : null}
-            />
-            {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}
-            {becauseSavedState === 'error' && (
-              <Note error>Couldn’t build recommendations from your list right now. Try again in a moment.</Note>
-            )}
-            {becauseSaved && (
+            {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
               <>
-                {becauseSaved.intro && <p className="narration">{becauseSaved.intro}</p>}
-                {becauseSaved.degraded && (
-                  <Note error>
-                    <strong>Ranked without AI.</strong> {becauseSaved.degraded}
-                  </Note>
+                <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
+                  <Grid items={visibleGridItems} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
+                </div>
+                {!isPhone && hasMore && (
+                  <div className="more" ref={sentinelRef}>
+                    {loadingMore && <Loading>Loading more</Loading>}
+                  </div>
                 )}
-                <PicksShowcase
-                  items={becauseSaved.picks}
-                  ranked={becauseSaved.ranked}
-                  onOpen={openMedia}
-                  onSave={onSave}
-                  isSaved={isSaved}
-                />
+                {canShowMore && (
+                  <div className="more">
+                    <button className="btn" onClick={onShowMore} disabled={loadingMore}>
+                      {loadingMore ? 'Loading…' : 'Show more'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
-          </section>
-        )}
-
-        {asking && <Loading>{askStage}</Loading>}
-        {askError && <Note error>{askError}</Note>}
-
-        {answer && (
-          <section ref={answerSectionRef} className="grid-scroll-anchor">
-            <SectionHead
-              title={answer.ranked ? 'Recommended for you' : 'Closest in the catalog'}
-              count={
-                `${answer.picks.length} picks` +
-                (answer.reference ? ` · from ${displayTitle(answer.reference)}` : '')
-              }
-            />
-            {answer.intro && <p className="narration">{answer.intro}</p>}
-            {answer.degraded && (
-              <Note error>
-                <strong>Ranked without AI.</strong> {answer.degraded}
-              </Note>
-            )}
-            <PicksShowcase
-              items={answer.picks}
-              ranked={answer.ranked}
-              onOpen={openMedia}
-              onSave={onSave}
-              isSaved={isSaved}
-            />
-
-            {hasMorePicks && (
-              <div className="refine">
-                <button className="btn secondary" onClick={moreLikeThis} disabled={asking}>
-                  More like this
-                </button>
-              </div>
+            {gridState === 'ready' && gridItems.length === 0 && (
+              <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
             )}
           </section>
-        )}
+        </main>
+      )}
 
-        <section ref={gridSectionRef} className="grid-scroll-anchor">
-          <div className="panel trending-head">
-            <SectionHead
-              title={gridTitle}
-              count={gridItems.length > 0 ? `${gridItems.length} titles` : null}
-            />
-            <BrowseFilters
-              genres={genres}
-              seasonLabel={seasonLabel}
-              sort={sort}
-              search={search}
-              onSort={setSort}
-              onOpenGenrePicker={() => setGenrePickerOpen(true)}
-              onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
-              onClearFilters={() => { onApplyGenres([]); onApplySeason(null, null); }}
-              onClearSearch={() => onSearch('')}
-            />
-          </div>
+      {view === 'saved' && (
+        <main className="wrap home screen">
+          <SavedScreen
+            saved={saved}
+            visibleSaved={visibleSaved}
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
+            completedAllTime={completedAllTime}
+            completedThisYear={completedThisYear}
+            currentYear={currentYear}
+            onOpenHistory={() => setHistoryOpen(true)}
+            airingSoon={myAiringSoon}
+            airingSoonState={myAiringSoonState}
+            onOpen={openMedia}
+            onSave={onSave}
+            isSaved={isSaved}
+            onBrowse={() => navigate('browse')}
+          />
+        </main>
+      )}
 
-          {gridState === 'loading' && gridItems.length === 0 && <Skeletons />}
-          {gridState === 'error' && (
-            <Note error>
-              Couldn’t reach the server — {gridError}{' '}
-              <button className="retry-link" onClick={() => load({ genres, season, seasonYear, search, sort })}>Try again</button>
-            </Note>
-          )}
-          {gridItems.length > 0 && (gridState === 'ready' || gridState === 'loading') && (
-            <>
-              <div className={`grid-fade${gridState === 'loading' ? ' dim' : ''}`}>
-                <Grid items={visibleGridItems} onOpen={openMedia} onSave={onSave} isSaved={isSaved} />
-              </div>
-              {!isPhone && hasMore && (
-                <div className="more" ref={sentinelRef}>
-                  {loadingMore && <Loading>Loading more</Loading>}
-                </div>
-              )}
-              {canShowMore && (
-                <div className="more">
-                  <button className="btn" onClick={onShowMore} disabled={loadingMore}>
-                    {loadingMore ? 'Loading…' : 'Show more'}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-          {gridState === 'ready' && gridItems.length === 0 && (
-            <Note>Nothing matched that. Try a different spelling or browse a genre.</Note>
-          )}
-        </section>
-      </main>
+      {view === 'profile' && (
+        <main className="wrap home screen">
+          <ProfileScreen
+            user={user}
+            authReady={authReady}
+            syncEnabled={syncEnabled}
+            onGoogleCredential={handleGoogleCredential}
+            onSignOut={signOut}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            savedCount={saved.length}
+            completedAllTime={completedAllTime}
+            onOpenTransfer={() => setTransferOpen(true)}
+            onOpenHistory={() => setHistoryOpen(true)}
+          />
+        </main>
+      )}
 
-      <TabBar
-        onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        onBrowse={() => gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        onAsk={() => setAskSheetOpen(true)}
-        onSaved={() => {
-          const shelf = document.getElementById('saved');
-          if (shelf) shelf.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          else pushToast('Nothing saved yet. Tap the bookmark on any title.');
-        }}
-        onProfile={() => {
-          // The account menu / sign-in button lives in the header; reuse it
-          // rather than duplicating its state here. Without sync enabled
-          // there is no account, so open the list-transfer sheet instead.
-          const trigger = document.querySelector('.header-actions .account-trigger, .header-actions .google-btn');
-          if (trigger) trigger.click();
-          else setTransferOpen(true);
-        }}
-      />
+      <TabBar view={view} onNavigate={navigate} onAsk={() => setAskSheetOpen(true)} />
 
       {askSheetOpen && (
         <div className="scrim" onClick={(e) => e.target === e.currentTarget && setAskSheetOpen(false)}>
@@ -784,7 +812,7 @@ export default function App() {
             <AskPanel
               value={question}
               onChange={setQuestion}
-              onAsk={() => { setAskSheetOpen(false); ask(); }}
+              onAsk={() => { setAskSheetOpen(false); navigate('home'); ask(); }}
               busy={asking}
             />
           </div>

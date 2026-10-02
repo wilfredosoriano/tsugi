@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X, Play, Plus, Minus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2 } from 'lucide-react';
+import { X, ChevronLeft, Play, Plus, Minus, Search, ExternalLink, Clock, Bookmark, Eye, CheckCircle2 } from 'lucide-react';
 import { starParts, cleanText, legalLinks, searchLinks, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import { WATCH_STATUSES } from '../lib/watchStatus.js';
@@ -114,10 +114,10 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
   ].filter(Boolean);
 
   return (
-    <div className="scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="scrim detail-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={sheetRef}
-        className={`sheet${sourceRect ? ' flip' : ''}`}
+        className={`sheet detail-sheet${sourceRect ? ' flip' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -129,8 +129,10 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
               <div className="native jp" style={{ marginTop: 5 }}>{media.title.native}</div>
             )}
           </div>
+          {/* A close X on desktop's modal, a back arrow on the phone's full-screen view (CSS swaps them). */}
           <button className="x" onClick={onClose} ref={closeRef} aria-label="Close details">
-            <X size={18} strokeWidth={2.75} />
+            <X className="x-close" size={18} strokeWidth={2.75} />
+            <ChevronLeft className="x-back" size={22} strokeWidth={3} />
           </button>
         </div>
 

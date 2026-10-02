@@ -5,6 +5,7 @@ import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
 import GoogleSignInButton from './GoogleSignInButton.jsx';
 import Stars from './Stars.jsx';
+import { pathFor, navClick } from '../lib/routes.js';
 
 const DEBOUNCE_MS = 260;
 const MIN_CHARS = 2;
@@ -19,8 +20,15 @@ function loadSeen() {
   }
 }
 
+const NAV = [
+  { view: 'home', label: 'Home' },
+  { view: 'browse', label: 'Browse' },
+  { view: 'saved', label: 'Saved' },
+  { view: 'profile', label: 'Profile' },
+];
+
 export default function Masthead({
-  search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
+  view, onNavigate, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
   user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
@@ -184,10 +192,25 @@ export default function Masthead({
   return (
     <header className="masthead">
       <div className="wrap mast">
-        <div className="logo">
+        <a className="logo" href="/" onClick={(e) => navClick(e, onNavigate, 'home')} aria-label="Tsugi home">
           <span className="logo-tile" aria-hidden="true">次</span>
           <b>Tsugi</b>
-        </div>
+        </a>
+
+        <nav className="mainnav" aria-label="Main">
+          {NAV.map((item) => (
+            <a
+              key={item.view}
+              href={pathFor(item.view)}
+              className={`mainnav-link${view === item.view ? ' active' : ''}`}
+              aria-current={view === item.view ? 'page' : undefined}
+              onClick={(e) => navClick(e, onNavigate, item.view)}
+            >
+              {item.label}
+              {item.view === 'saved' && savedCount > 0 && <span className="mainnav-count">{savedCount}</span>}
+            </a>
+          ))}
+        </nav>
 
         <div className="search-wrap" ref={wrapRef}>
           <div className="searchbar">

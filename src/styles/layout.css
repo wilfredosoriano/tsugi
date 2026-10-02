@@ -14,6 +14,16 @@ main.home {
 }
 
 .ask-wrap.no-hero { margin-top: var(--gutter); }
+main.home.screen { padding-top: 40px; }
+@media (min-width: 1100px) { .search-wrap { max-width: 460px; } }
+@media (min-width: 768px) and (max-width: 1099px) {
+  .mast { flex-wrap: wrap; gap: 10px 16px; }
+  .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
+  .grid-scroll-anchor { scroll-margin-top: 160px; }
+  .google-btn-label, .account-name { display: none; }
+  .google-btn { width: 42px; padding: 0; justify-content: center; border-radius: 14px; }
+  .account-trigger { padding: 3px; }
+}
 .tabbar { display: none; }
 .ask-sheet .ask { max-width: none; margin: 0; border: none; border-radius: 0; box-shadow: none; }
 .ask-sheet .ask-head { padding-right: 70px; }
@@ -31,17 +41,14 @@ main.home {
   main.home { gap: 40px; padding-top: 36px; padding-bottom: 24px; }
 
   /* header: logo + actions on row one, search full-width on row two */
-  .mast { flex-wrap: wrap; gap: 10px 10px; padding-top: 10px; padding-bottom: 10px; }
-  .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
+  .mast { gap: 10px; padding-top: 10px; padding-bottom: 10px; }
+  .search-wrap { max-width: none; }
+  .searchbar { height: 46px; }
   .searchbar-kbd { display: none; }
-  .header-actions { gap: 8px; }
+  .header-actions, .mainnav { display: none; }
   .logo b { font-size: var(--fs-20); }
   .logo-tile { width: 40px; height: 40px; }
-  .icon-btn, .account-skeleton { width: 40px; height: 40px; min-width: 40px; }
-  .google-btn-label, .account-name { display: none; }
-  .google-btn { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 12px; }
-  .account-trigger { padding: 3px; }
-  .grid-scroll-anchor { scroll-margin-top: 140px; }
+  .grid-scroll-anchor { scroll-margin-top: 90px; }
 
   /* hero: capped height, 4:5 crop, Ask overlaps the bottom edge */
   .hero-wrap { padding-top: 16px; }
@@ -160,6 +167,33 @@ main.home {
   .related-row { padding-left: 16px; padding-right: 16px; }
   .toasts { bottom: calc(92px + env(safe-area-inset-bottom)); }
 
+  /* Title details: a full screen with a back arrow, not a bottom sheet. */
+  .detail-scrim { padding: 0; align-items: stretch; }
+  .detail-sheet {
+    height: 100dvh; max-height: 100dvh; border: none; border-radius: 0; box-shadow: none;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .detail-sheet .sheet-head { padding: calc(12px + env(safe-area-inset-top)) 16px 12px 66px; }
+  .detail-sheet .x { left: 10px; right: auto; top: calc(8px + env(safe-area-inset-top)); }
+  .detail-sheet .x-close { display: none; }
+  .detail-sheet .x-back { display: block; }
+  .detail-sheet .x:hover { transform: none; }
+  /* Cover beside its actions, details below, so the status buttons get a
+     full tap target instead of a quarter of a 124px column. */
+  .detail-sheet .sheet-body { grid-template-columns: 1fr; }
+  .detail-sheet .sheet-body > div:first-child {
+    display: grid; grid-template-columns: 120px 1fr; column-gap: 16px; row-gap: 10px; align-items: start; align-content: start;
+  }
+  .detail-sheet .sheet-body > div:first-child > .cover { grid-row: 1 / span 5; max-width: none; }
+  .detail-sheet .sheet-body > div:first-child > :not(.cover) { grid-column: 2; margin-top: 0 !important; }
+  .detail-sheet .status-picker { grid-template-columns: repeat(4, minmax(44px, 1fr)); }
+
+  .screen-title { font-size: var(--fs-28); }
+  main.home.screen { padding-top: 24px; }
+  .browse-cta .btn { width: 100%; }
+  .profile-grid { grid-template-columns: 1fr; }
+  .profile-actions .btn, .profile-panel > .btn { width: 100%; }
+
   /* bottom tab bar */
   .tabbar {
     display: grid; grid-template-columns: repeat(5, 1fr); align-items: end;
@@ -172,6 +206,8 @@ main.home {
     min-height: 52px; padding: 4px 0; border-radius: 12px;
     font-size: var(--fs-14); font-weight: 900; line-height: 1.1; color: var(--text);
   }
+  .tabbar-item { text-decoration: none; }
+  .tabbar-item.active:not(.tabbar-primary) { background: var(--selected); color: var(--on-selected); }
   .tabbar-item:active { background: var(--selected); color: var(--on-selected); }
   .tabbar-ask-circle {
     display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; margin-top: -30px;
