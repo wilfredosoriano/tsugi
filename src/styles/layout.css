@@ -22,8 +22,6 @@ main.home.screen { padding-top: 40px; }
   .grid-scroll-anchor { scroll-margin-top: 160px; }
 }
 .tabbar { display: none; }
-.ask-sheet .ask { max-width: none; margin: 0; border: none; border-radius: 0; box-shadow: none; }
-.ask-sheet .ask-head { padding-right: 70px; }
 
 /* ── tablet and down ──────────────────────────────────────── */
 @media (max-width: 899px) {
@@ -163,6 +161,16 @@ main.home.screen { padding-top: 40px; }
   .related > .mono { padding: 0 16px; }
   .related-row { padding-left: 16px; padding-right: 16px; }
   .toasts { bottom: calc(92px + env(safe-area-inset-bottom)); }
+
+  /* chat: the composer rides just above the tab bar */
+  .ask-screen { gap: 16px; min-height: calc(100svh - 230px); }
+  .composer { bottom: calc(102px + env(safe-area-inset-bottom)); padding: 8px; border-radius: var(--r-card); }
+  .composer textarea { min-height: 46px; }
+  .composer-send { width: 52px; min-height: 46px; }
+  .msg { gap: 8px; }
+  .msg-avatar { width: 34px; height: 34px; font-size: 15px; border-radius: 10px; }
+  .msg.user .bubble { max-width: 88%; }
+  .chat-suggestions { padding-left: 0; }
 
   /* Title details: a full screen with a back arrow, not a bottom sheet. */
   .detail-scrim { padding: 0; align-items: stretch; }

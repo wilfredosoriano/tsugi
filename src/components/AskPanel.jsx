@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 import SpeedLines from './SpeedLines.jsx';
 import { useTypedPlaceholder } from '../hooks/useTypedPlaceholder.js';
 
-const EXAMPLES = [
+export const EXAMPLES = [
   { label: 'similar to Black Clover', text: "Something similar to Black Clover, but with better fights" },
   { label: 'short, one weekend', text: 'A short series I can finish in one weekend, under 15 episodes' },
   { label: 'clever thrillers', text: 'Psychological thrillers where the main character is genuinely clever' },

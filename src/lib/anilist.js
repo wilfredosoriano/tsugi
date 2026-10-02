@@ -497,6 +497,8 @@ export function toPromptRows(pool) {
     duration: m.duration,
     format: m.format,
     score: m.averageScore,
+    // Only present on pools built with PLAN_FIELDS; gives the ranker real tone signals.
+    tags: (m.tags || []).filter((t) => t.rank >= 60).slice(0, 5).map((t) => t.name),
   }));
 }
 
@@ -555,4 +557,168 @@ export async function fetchWeeklyAiring() {
   }
 
   return byDay.map((list) => [...list].sort((a, b) => (b.media.popularity || 0) - (a.media.popularity || 0)));
+}
+
+/* ── Ask companion: structured search → candidate pool ─────────────── */
+
+const PLAN_FIELDS = `${MEDIA_FIELDS} ${RELATION_CHECK_FIELDS} tags { name rank }`;
+
+// Shorts, music videos and specials are rarely what someone means by "something
+// to watch"; they only come back when the user asks for those formats.
+const MINOR_FORMATS = ['TV_SHORT', 'MUSIC', 'SPECIAL'];
+
+/** Client-side check for the same constraints the AniList query applies (recommendation-graph results skip that query). */
+function fitsPlan(m, plan) {
+  if (!plan.formats && (MINOR_FORMATS.includes(m.format) || (m.duration && m.duration < 10))) return false;
+  if (plan.excludeGenres.some((g) => m.genres?.includes(g))) return false;
+  if (plan.excludeTags.some((t) => m.tags?.some((x) => x.name === t && x.rank >= 50))) return false;
+  if (plan.maxEpisodes && m.episodes && m.episodes > plan.maxEpisodes + 2) return false;
+  if (plan.minEpisodes && m.episodes && m.episodes < plan.minEpisodes) return false;
+  if (plan.formats && !plan.formats.includes(m.format)) return false;
+  if (plan.yearFrom && m.seasonYear && m.seasonYear < plan.yearFrom) return false;
+  if (plan.yearTo && m.seasonYear && m.seasonYear > plan.yearTo) return false;
+  if (plan.airing && m.status !== 'RELEASING') return false;
+  return true;
+}
+
+async function filteredSearch(plan, { genres, tags, sort, excludeIds, perPage = 40 }) {
+  const genreList = genres.filter((g) => GENRES.includes(g));
+  const tagList = [...genres.filter((g) => !GENRES.includes(g)), ...tags];
+  const data = await gql(
+    `query ($genreIn: [String], $genreNotIn: [String], $tagIn: [String], $tagNotIn: [String],
+            $epGt: Int, $epLt: Int, $formats: [MediaFormat], $startGt: FuzzyDateInt, $startLt: FuzzyDateInt,
+            $status: MediaStatus, $idNotIn: [Int], $formatNotIn: [MediaFormat], $minPopularity: Int, $sort: [MediaSort], $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        media(type: ANIME, isAdult: false, genre_in: $genreIn, genre_not_in: $genreNotIn, tag_in: $tagIn, tag_not_in: $tagNotIn,
+              episodes_greater: $epGt, episodes_lesser: $epLt, format_in: $formats, startDate_greater: $startGt,
+              startDate_lesser: $startLt, status: $status, id_not_in: $idNotIn, format_not_in: $formatNotIn,
+              popularity_greater: $minPopularity, sort: $sort) {
+          ${PLAN_FIELDS}
+        }
+      }
+    }`,
+    {
+      genreIn: genreList.length ? genreList : undefined,
+      genreNotIn: plan.excludeGenres.length ? plan.excludeGenres : undefined,
+      tagIn: tagList.length ? tagList : undefined,
+      tagNotIn: plan.excludeTags.length ? plan.excludeTags : undefined,
+      epGt: plan.minEpisodes ? plan.minEpisodes - 1 : undefined,
+      epLt: plan.maxEpisodes ? plan.maxEpisodes + 3 : undefined,
+      formats: plan.formats || undefined,
+      startGt: plan.yearFrom ? (plan.yearFrom - 1) * 10000 + 1231 : undefined,
+      startLt: plan.yearTo ? (plan.yearTo + 1) * 10000 + 101 : undefined,
+      status: plan.airing ? 'RELEASING' : undefined,
+      idNotIn: excludeIds.length ? excludeIds.slice(0, 300) : undefined,
+      formatNotIn: plan.formats ? undefined : MINOR_FORMATS,
+      // A quality floor: well-scored but near-unknown entries otherwise crowd
+      // out the shows people actually mean. Era-limited asks (older catalogs
+      // have fewer AniList users) get a lower one.
+      minPopularity: plan.yearTo && plan.yearTo < 2005 ? 3000 : 8000,
+      sort: [sort],
+      perPage,
+    }
+  );
+  return data.Page.media;
+}
+
+const normTitle = (t) => (t || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/**
+ * Finds the catalog entry someone means by a title. AniList's text match
+ * alone often returns a spin-off short or a later season first (e.g.
+ * "Frieren" → a 3-minute mini series), so: prefer an exact title match,
+ * then the most popular full-length entry among the matches.
+ */
+export async function resolveTitle(title) {
+  const data = await gql(
+    `query ($s: String) {
+      Page(page: 1, perPage: 8) {
+        media(type: ANIME, isAdult: false, search: $s, sort: SEARCH_MATCH) { ${MEDIA_FIELDS} }
+      }
+    }`,
+    { s: title }
+  );
+  const list = data.Page.media.filter(hasCover);
+  const want = normTitle(title);
+  const exact = list.filter((m) => [m.title.english, m.title.romaji].some((t) => normTitle(t) === want));
+  const candidates = (exact.length ? exact : list).filter((m) => !MINOR_FORMATS.includes(m.format));
+  const ranked = (candidates.length ? candidates : list).sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+  return ranked[0] || null;
+}
+
+/** A named title's own curated "if you liked this" graph, plus its strongest tags. */
+async function referenceGraph(title) {
+  const reference = await resolveTitle(title);
+  if (!reference) return null;
+  const data = await gql(
+    `query ($id: Int) {
+      Media(id: $id) {
+        tags { name rank }
+        recommendations(sort: RATING_DESC, perPage: 25) {
+          nodes { mediaRecommendation { ${PLAN_FIELDS} } }
+        }
+      }
+    }`,
+    { id: reference.id }
+  );
+  const media = data.Media;
+  return {
+    reference,
+    items: (media?.recommendations?.nodes || []).map((n) => n.mediaRecommendation).filter(Boolean),
+    tags: (media?.tags || []).filter((t) => t.rank >= 75).slice(0, 2).map((t) => t.name),
+  };
+}
+
+/**
+ * Builds the pool the ranker chooses from, most relevant first:
+ *   1. the recommendation graphs of any titles the user named,
+ *   2. a strict catalog query with every genre, tag and limit applied,
+ *   3. progressively looser queries (fewer tags, then no genre/tag at all,
+ *      still honouring exclusions/length/format/era) until the pool is
+ *      big enough to rank well.
+ * Sequels, adult titles and anything in `excludeIds` (already saved,
+ * completed, or shown earlier in the chat) never make it in.
+ */
+export async function fetchCandidatesFromPlan(plan, excludeIds = []) {
+  const excluded = new Set(excludeIds);
+  const pool = new Map();
+  const add = (list) => {
+    for (const m of list) {
+      if (!m || pool.has(m.id) || excluded.has(m.id) || !hasCover(m) || m.isAdult || isSequel(m) || !fitsPlan(m, plan)) continue;
+      pool.set(m.id, m);
+    }
+  };
+
+  const ids = [...excluded];
+  const search = (step) => filteredSearch(plan, { ...step, sort: step.sort || 'SCORE_DESC', excludeIds: ids });
+
+  // The reference graphs and the strict query don't depend on each other.
+  const [graphResults, strict] = await Promise.all([
+    Promise.all(plan.references.map((t) => referenceGraph(t).catch(() => null))),
+    search({ genres: plan.genres, tags: plan.tags }),
+  ]);
+  const graphs = graphResults.filter(Boolean);
+  for (const g of graphs) excluded.add(g.reference.id);
+  for (const g of graphs) add(g.items);
+  add(strict);
+
+  const refTags = [...new Set(graphs.flatMap((g) => g.tags))].slice(0, 2);
+  const steps = [
+    plan.tags.length > 1 && { genres: plan.genres, tags: plan.tags.slice(0, 1) },
+    refTags.length && { genres: plan.genres, tags: refTags.slice(0, 1) },
+    plan.genres.length && plan.tags.length && { genres: [], tags: plan.tags.slice(0, 1) },
+    plan.genres.length && { genres: plan.genres.slice(0, 1), tags: [] },
+    { genres: [], tags: [], sort: 'POPULARITY_DESC' },
+  ].filter(Boolean);
+
+  for (const step of steps) {
+    if (pool.size >= 30) break;
+    // eslint-disable-next-line no-await-in-loop
+    add(await search(step));
+  }
+
+  return {
+    references: graphs.map((g) => g.reference),
+    pool: [...pool.values()].slice(0, 45),
+  };
 }

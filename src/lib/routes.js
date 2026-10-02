@@ -1,8 +1,9 @@
-export const VIEWS = ['home', 'browse', 'saved', 'profile'];
+export const VIEWS = ['home', 'browse', 'ask', 'saved', 'profile'];
 
 export const VIEW_TITLES = {
   home: 'Tsugi — what to watch next',
   browse: 'Browse — Tsugi',
+  ask: 'Ask — Tsugi',
   saved: 'Saved — Tsugi',
   profile: 'Profile — Tsugi',
 };

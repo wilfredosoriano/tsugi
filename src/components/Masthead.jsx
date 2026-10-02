@@ -22,6 +22,7 @@ function loadSeen() {
 const NAV = [
   { view: 'home', label: 'Home' },
   { view: 'browse', label: 'Browse' },
+  { view: 'ask', label: 'Ask' },
   { view: 'saved', label: 'Saved' },
   { view: 'profile', label: 'Profile' },
 ];

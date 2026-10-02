@@ -22,17 +22,20 @@ const SYSTEM_PROMPT = [
   'You recommend anime, choosing ONLY from the catalog rows provided.',
   'Never invent a title or an id. Never return an id that is not in the list.',
   'Read the request carefully and weigh EVERY constraint in it before picking, the way a thoughtful person would, not just a keyword match:',
-  'mood/tone (e.g. intense vs chill), explicit exclusions (e.g. "no killing" rules out war/graphic-violence-leaning picks),',
+  'mood/tone (e.g. intense vs chill — judge it from each row\'s top tags, such as Iyashikei vs Gore or Tragedy, not from guesswork), explicit exclusions (e.g. "no killing" rules out war/graphic-violence-leaning picks),',
   'genre combinations (a request for "romance and comedy" needs BOTH present, not just one).',
   'Any number of episodes or a time window (e.g. "15 episodes", "something for a weekend") sets a real budget, not an exact target —',
   'convert each row\'s episodes×minutes to hours and favor titles that roughly fit it: a "15 episodes"/"weekend" ask means lean toward roughly 10-20 episode titles over 40+ episode long-runners, even when a long-runner otherwise matches the mood well. Give it a generous range either way, but do not ignore it.',
   'Never pick a title that is itself a sequel or later season/part of a franchise — always favor the original/first entry, unless the request explicitly names that later season or part.',
   `Pick up to ${PICKS} matches, best first, ranked by how well each fits overall.`,
-  'Only return fewer than that if the catalog truly has nothing reasonable left — a solid partial fit is always better than an empty list, and an empty "picks" array should be rare.',
+  'Aim for 6 to 10 picks. A solid partial fit is better than a short list, as long as its "why" is honest about what it matches (and briefly, what differs).',
+  'But never include a title that contradicts the request: a dark, brutal show for an upbeat or cozy ask, a long-runner for a short ask, or anything carrying something the user excluded. Fewer, right picks beat padding.',
+  'Describe each title accurately — do not call a show light or uplifting if it is known for being dark.',
+  'At most one entry per franchise: if a show and its remake or another version are both in the list, pick the better fit only.',
   'Reply with JSON only — no markdown fence, no commentary — shaped exactly:',
   '{"intro":"one sentence addressing the request","picks":[{"id":123,"why":"one sentence"}]}',
   'Each "why" must name the concrete thing that matches: a tone, a structure,',
-  'a kind of protagonist, a pacing quality. Never vague praise, never plot spoilers.',
+  'a kind of protagonist, a pacing quality — not just a list of its genres. Never vague praise, never plot spoilers.',
 ].join(' ');
 
 function fail(status, message) {
@@ -58,7 +61,8 @@ function toRow(m) {
   const duration = Number.isFinite(m.duration) ? m.duration : '?';
   const score = Number.isFinite(m.score) ? m.score : '?';
   const id = Number.isFinite(m.id) ? m.id : 0;
-  return `${id} | ${title} | ${genres} | ${format} | ${episodes} ep × ${duration}min | ${score}/100`;
+  const tags = Array.isArray(m.tags) ? m.tags.slice(0, 5).map((t) => String(t).slice(0, 30)).join(', ') : '';
+  return `${id} | ${title} | ${genres} | ${tags || '-'} | ${format} | ${episodes} ep × ${duration}min | ${score}/100`;
 }
 
 export async function rankPicks({ question, pool, apiKey, model }) {
@@ -104,7 +108,7 @@ export async function rankPicks({ question, pool, apiKey, model }) {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: `Request: ${trimmed}\n\nCatalog (id | title | genres | format | episodes × min/ep | score):\n${rows}`,
+            content: `Request: ${trimmed}\n\nCatalog (id | title | genres | top tags | format | episodes × min/ep | score):\n${rows}`,
           },
         ],
       }),

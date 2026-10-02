@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { rankPicks } from './server/rank.js';
 import { buildOgHtml } from './server/og.js';
+import { companionTurn } from './server/companion.js';
 
 /**
  * In production, /api/recommend is served by a Vercel Function (api/) or a
@@ -13,6 +14,36 @@ function devApi(env) {
   return {
     name: 'tsugi-dev-api',
     configureServer(server) {
+      const readJson = (req) => new Promise((resolve, reject) => {
+        let raw = '';
+        req.on('data', (c) => (raw += c));
+        req.on('end', () => {
+          try { resolve(JSON.parse(raw || '{}')); } catch (e) { reject(e); }
+        });
+        req.on('error', reject);
+      });
+
+      server.middlewares.use('/api/chat', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Use POST.' }));
+        }
+        try {
+          const body = await readJson(req);
+          const result = await companionTurn({
+            messages: body.messages,
+            taste: body.taste,
+            apiKey: env.GROQ_API_KEY,
+            model: env.GROQ_CHAT_MODEL,
+          });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          res.statusCode = err.status || 500;
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
+
       server.middlewares.use('/api/recommend', async (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;

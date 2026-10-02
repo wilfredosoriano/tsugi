@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
 import Masthead from './components/Masthead.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
@@ -15,9 +14,12 @@ import BrowseFilters from './components/BrowseFilters.jsx';
 import PicksShowcase from './components/PicksShowcase.jsx';
 import TabBar from './components/TabBar.jsx';
 import SavedScreen from './screens/SavedScreen.jsx';
+import AskScreen from './screens/AskScreen.jsx';
+import { useCompanion } from './hooks/useCompanion.js';
+import { rankPool } from './lib/rankClient.js';
 import ProfileScreen from './screens/ProfileScreen.jsx';
 import { initialView, pathFor, viewFromPath, VIEW_TITLES } from './lib/routes.js';
-import { fetchGrid, fetchCandidates, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, toPromptRows, SORTS, SEASONS } from './lib/anilist.js';
+import { fetchGrid, fetchCandidatesForMedia, fetchById, fetchFeaturedPool, fetchAiringForIds, fetchWeeklyAiring, SORTS, SEASONS } from './lib/anilist.js';
 import { pickDaily } from './lib/dailyPick.js';
 import { getCachedRecommendation, setCachedRecommendation, pruneBecauseSavedCache } from './lib/becauseSavedCache.js';
 import { useSaved } from './hooks/useSaved.js';
@@ -52,7 +54,6 @@ export default function App() {
   const deepLinkId = useRef(initialUrl.id);
   const historyOpenId = useRef(initialUrl.id ? Number(initialUrl.id) : null);
   const gridSectionRef = useRef(null);
-  const answerSectionRef = useRef(null);
   const prevFilter = useRef({
     genres: initialUrl.genres, season: initialUrl.season, seasonYear: initialUrl.seasonYear, search: initialUrl.search,
   });
@@ -72,12 +73,6 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [question, setQuestion] = useState('');
-  const [askedQuestion, setAskedQuestion] = useState('');
-  const [askPool, setAskPool] = useState(null); // the candidate pool behind the current answer
-  const [answer, setAnswer] = useState(null); // { intro, picks, reference, degraded, ranked }
-  const [asking, setAsking] = useState(false);
-  const [askStage, setAskStage] = useState('');
-  const [askError, setAskError] = useState('');
 
   const [featured, setFeatured] = useState([]);
   const [featuredState, setFeaturedState] = useState('loading'); // loading | ready | error
@@ -97,7 +92,6 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [genrePickerOpen, setGenrePickerOpen] = useState(false);
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false);
-  const [askSheetOpen, setAskSheetOpen] = useState(false);
   const isPhone = useMediaQuery('(max-width: 767px)');
   // Phones page the grid with a "Show more" button instead of infinite scroll.
   const [shownCount, setShownCount] = useState(18);
@@ -120,6 +114,7 @@ export default function App() {
   const { saved, isSaved, toggle, setWatchStatus, setProgress, merge, ready: savedReady, completions } = useSaved(user);
   const [statusFilter, setStatusFilter] = useState('all');
   const { theme, toggle: toggleTheme } = useTheme();
+  const companion = useCompanion({ saved, completions });
 
   const onImportList = useCallback((items) => {
     const result = merge(items);
@@ -411,13 +406,6 @@ export default function App() {
     }
   }, [genres, season, seasonYear, search]);
 
-  /* Same idea for AI recommendation results: they land in a section below
-     the ask panel, easy to miss once the page has several rails/sections
-     above it. */
-  useEffect(() => {
-    if (answer) answerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [answer]);
-
   const loadMore = useCallback(async () => {
     setLoadingMore(true);
     try {
@@ -448,13 +436,6 @@ export default function App() {
     setShownCount(next);
   };
 
-  useEffect(() => {
-    if (!askSheetOpen) return undefined;
-    const onKey = (e) => e.key === 'Escape' && setAskSheetOpen(false);
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [askSheetOpen]);
-
   const seasonLabel = [season ? SEASONS.find((s) => s.value === season)?.label : '', seasonYear]
     .filter(Boolean)
     .join(' ');
@@ -473,117 +454,17 @@ export default function App() {
   const completedThisYear = (completions[currentYear] || []).length;
   const completedAllTime = Object.values(completions).reduce((sum, list) => sum + (list?.length || 0), 0);
 
-  /* ── ask ────────────────────────────────────────────────── */
-  async function rankPool(requestText, pool) {
-    let intro = '';
-    let picks = pool.slice(0, 10);
-    let degraded = '';
-
-    try {
-      const res = await fetch('/api/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: requestText, pool: toPromptRows(pool) }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-
-      const byId = new Map(pool.map((m) => [m.id, m]));
-      const resolved = data.picks
-        .map((p) => {
-          const media = byId.get(p.id);
-          return media ? { ...media, _why: p.why } : null;
-        })
-        .filter(Boolean);
-
-      if (resolved.length) {
-        intro = data.intro;
-        picks = resolved;
-      } else {
-        degraded = 'The model returned nothing usable. Showing the closest catalog matches instead.';
-      }
-    } catch (err) {
-      degraded = err.message;
-    }
-
-    return { intro, picks, degraded };
-  }
-
-  async function rank(requestText, pool, reference) {
-    const result = await rankPool(requestText, pool);
-    setAnswer({ ...result, reference, ranked: !result.degraded });
-  }
-
-  async function ask() {
+  /* Home's Ask box is the way in: the conversation itself lives on /ask. */
+  const startAsk = () => {
     const q = question.trim();
     if (!q) return;
-
     setQuestion('');
-    setAsking(true);
-    setAskError('');
-    setAnswer(null);
-    setAskPool(null);
-    setAskStage('Pulling candidates from the catalog');
-
-    try {
-      const { reference, pool } = await fetchCandidates(q);
-
-      if (!pool.length) {
-        setAskError('No catalog matches for that. Try naming a title you already liked.');
-        return;
-      }
-
-      setAskStage(`Ranking ${pool.length} candidates`);
-      setAskedQuestion(q);
-      setAskPool(pool);
-      await rank(q, pool, reference);
-    } catch (err) {
-      setAskError(err.message);
-    } finally {
-      setAsking(false);
-      setAskStage('');
-    }
-  }
-
-  /* Replaces the current picks with a fresh batch from the SAME candidate
-     pool and the SAME original request — no re-typing needed. Excludes
-     whatever was already shown so the model can't just repeat itself, and
-     sticks to _core candidates (genuinely tied to the reference's own
-     recommendation graph/tags) rather than reaching into broadPool()
-     filler once the good matches run out — otherwise a "sports-drama"
-     request could end up swapped in for something totally unrelated. */
-  async function moreLikeThis() {
-    if (!askPool || !answer) return;
-    const shown = new Set(answer.picks.map((m) => m.id));
-    const remaining = askPool.filter((m) => !shown.has(m.id) && m._core !== false);
-    if (!remaining.length) return;
-
-    setAsking(true);
-    setAskStage('Finding more picks');
-    try {
-      const result = await rankPool(askedQuestion, remaining);
-      if (result.picks.length) {
-        setAnswer((prev) => ({
-          ...prev,
-          picks: result.picks,
-          intro: result.intro || prev.intro,
-          ranked: !result.degraded,
-        }));
-      }
-    } finally {
-      setAsking(false);
-      setAskStage('');
-    }
-  }
+    navigate('ask');
+    companion.send(q);
+  };
 
   const showHero = featuredState !== 'error' && (featured.length > 0 || featuredState === 'loading');
   const showAiringWeek = weeklyAiringState === 'ready' && weeklyAiring.some((d) => d.length > 0);
-
-  const shownPickIds = answer ? new Set(answer.picks.map((m) => m.id)) : null;
-  const hasMorePicks = askPool && shownPickIds
-    ? askPool.some((m) => !shownPickIds.has(m.id) && m._core !== false)
-    : false;
 
   return (
     <>
@@ -608,48 +489,11 @@ export default function App() {
           )}
 
           <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
-            <AskPanel value={question} onChange={setQuestion} onAsk={ask} busy={asking} />
+            <AskPanel value={question} onChange={setQuestion} onAsk={startAsk} busy={companion.busy} />
           </div>
 
           <main className="wrap home">
             <h1 className="sr-only">Tsugi</h1>
-            {asking && <Loading>{askStage}</Loading>}
-            {askError && <Note error>{askError}</Note>}
-
-            {answer && (
-              <section ref={answerSectionRef} className="grid-scroll-anchor">
-                <SectionHead
-                  title={answer.ranked ? 'Recommended for you' : 'Closest in the catalog'}
-                  count={
-                    `${answer.picks.length} picks` +
-                    (answer.reference ? ` · from ${displayTitle(answer.reference)}` : '')
-                  }
-                />
-                {answer.intro && <p className="narration">{answer.intro}</p>}
-                {answer.degraded && (
-                  <Note error>
-                    <strong>Ranked without AI.</strong> {answer.degraded}
-                  </Note>
-                )}
-                <PicksShowcase
-                  items={answer.picks}
-                  ranked={answer.ranked}
-                  onOpen={openMedia}
-                  onSave={onSave}
-                  isSaved={isSaved}
-                />
-
-                {hasMorePicks && (
-                  <div className="refine">
-                    <button className="btn secondary" onClick={moreLikeThis} disabled={asking}>
-                      More like this
-                    </button>
-                  </div>
-                )}
-              </section>
-            )}
-
-
             {showAiringWeek && (
               <section className="panel">
                 <SectionHead title="Airing this week" />
@@ -666,7 +510,7 @@ export default function App() {
                 {becauseSavedState === 'loading' && <Loading>Finding more like it</Loading>}
                 {becauseSavedState === 'error' && (
                   <Note error>Couldn’t build recommendations from your list right now. Try again in a moment.</Note>
-            )}
+                )}
                 {becauseSaved && (
                   <>
                     {becauseSaved.intro && <p className="narration">{becauseSaved.intro}</p>}
@@ -683,10 +527,9 @@ export default function App() {
                       isSaved={isSaved}
                     />
                   </>
-            )}
+                )}
               </section>
             )}
-
 
             <section className="panel browse-cta">
               <div>
@@ -754,6 +597,21 @@ export default function App() {
         </main>
       )}
 
+      {view === 'ask' && (
+        <main className="wrap home screen ask-main">
+          <AskScreen
+            messages={companion.messages}
+            busy={companion.busy}
+            stage={companion.stage}
+            onSend={companion.send}
+            onReset={companion.reset}
+            onOpen={openMedia}
+            onSave={onSave}
+            isSaved={isSaved}
+          />
+        </main>
+      )}
+
       {view === 'saved' && (
         <main className="wrap home screen">
           <SavedScreen
@@ -793,23 +651,7 @@ export default function App() {
         </main>
       )}
 
-      <TabBar view={view} onNavigate={navigate} onAsk={() => setAskSheetOpen(true)} />
-
-      {askSheetOpen && (
-        <div className="scrim" onClick={(e) => e.target === e.currentTarget && setAskSheetOpen(false)}>
-          <div className="sheet ask-sheet" role="dialog" aria-modal="true" aria-label="Ask for a recommendation">
-            <button className="x" onClick={() => setAskSheetOpen(false)} aria-label="Close">
-              <X size={18} strokeWidth={2.75} />
-            </button>
-            <AskPanel
-              value={question}
-              onChange={setQuestion}
-              onAsk={() => { setAskSheetOpen(false); navigate('home'); ask(); }}
-              busy={asking}
-            />
-          </div>
-        </div>
-      )}
+      <TabBar view={view} onNavigate={navigate} />
 
       {open && (
         <DetailSheet

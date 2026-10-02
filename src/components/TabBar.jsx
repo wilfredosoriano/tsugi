@@ -9,8 +9,8 @@ const TABS = [
   { view: 'profile', label: 'Profile', Icon: User },
 ];
 
-/** Phone-only bottom navigation between the four screens, with Ask raised in the middle. */
-export default function TabBar({ view, onNavigate, onAsk }) {
+/** Phone-only bottom navigation between the screens, with Ask raised in the middle. */
+export default function TabBar({ view, onNavigate }) {
   return (
     <nav className="tabbar" aria-label="Main">
       {TABS.map((tab) =>
@@ -25,9 +25,15 @@ export default function TabBar({ view, onNavigate, onAsk }) {
             <tab.Icon size={22} strokeWidth={2.5} aria-hidden="true" /> {tab.label}
           </a>
         ) : (
-          <button key="ask" className="tabbar-item tabbar-primary" onClick={onAsk} aria-haspopup="dialog">
+          <a
+            key="ask"
+            href={pathFor('ask')}
+            className={`tabbar-item tabbar-primary${view === 'ask' ? ' active' : ''}`}
+            aria-current={view === 'ask' ? 'page' : undefined}
+            onClick={(e) => navClick(e, onNavigate, 'ask')}
+          >
             <span className="tabbar-ask-circle"><Sparkles size={26} strokeWidth={2.5} aria-hidden="true" /></span> Ask
-          </button>
+          </a>
         )
       )}
     </nav>
