@@ -593,15 +593,7 @@ export default function App() {
         search={search}
         onSearch={onSearch}
         onOpenMedia={openMedia}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         savedCount={saved.length}
-        onOpenTransfer={() => setTransferOpen(true)}
-        user={user}
-        onGoogleCredential={handleGoogleCredential}
-        onSignOut={signOut}
-        syncEnabled={syncEnabled}
-        authReady={authReady}
         airingAlerts={myAiringSoonState === 'ready' ? myAiringSoon : []}
       />
 

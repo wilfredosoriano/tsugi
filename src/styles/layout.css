@@ -20,9 +20,6 @@ main.home.screen { padding-top: 40px; }
   .mast { flex-wrap: wrap; gap: 10px 16px; }
   .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
   .grid-scroll-anchor { scroll-margin-top: 160px; }
-  .google-btn-label, .account-name { display: none; }
-  .google-btn { width: 42px; padding: 0; justify-content: center; border-radius: 14px; }
-  .account-trigger { padding: 3px; }
 }
 .tabbar { display: none; }
 .ask-sheet .ask { max-width: none; margin: 0; border: none; border-radius: 0; box-shadow: none; }

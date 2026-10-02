@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sun, Moon, Repeat, LogOut, Bell, Search } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { quickSearch, fetchById } from '../lib/anilist.js';
 import { starParts, displayTitle } from '../lib/format.js';
 import { formatAiring } from '../lib/airing.js';
-import GoogleSignInButton from './GoogleSignInButton.jsx';
 import Stars from './Stars.jsx';
 import { pathFor, navClick } from '../lib/routes.js';
 
@@ -28,8 +27,7 @@ const NAV = [
 ];
 
 export default function Masthead({
-  view, onNavigate, search, onSearch, onOpenMedia, theme, onToggleTheme, savedCount, onOpenTransfer,
-  user, authReady, onGoogleCredential, onSignOut, syncEnabled, airingAlerts,
+  view, onNavigate, search, onSearch, onOpenMedia, savedCount, airingAlerts,
 }) {
   const [term, setTerm] = useState('');
 
@@ -50,8 +48,6 @@ export default function Masthead({
   const searchInputRef = useRef(null);
   const requestId = useRef(0);
   const debounceRef = useRef(null);
-  const accountRef = useRef(null);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const bellRef = useRef(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [seen, setSeen] = useState(loadSeen);
@@ -74,19 +70,11 @@ export default function Masthead({
   useEffect(() => {
     const onOutside = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
-      if (accountRef.current && !accountRef.current.contains(e.target)) setAccountMenuOpen(false);
       if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
     };
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
   }, []);
-
-  useEffect(() => {
-    if (!accountMenuOpen) return undefined;
-    const onKey = (e) => e.key === 'Escape' && setAccountMenuOpen(false);
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [accountMenuOpen]);
 
   useEffect(() => {
     if (!bellOpen) return undefined;
@@ -282,23 +270,9 @@ export default function Masthead({
           )}
         </div>
 
+        {/* Account, theme and list tools live on the Profile screen; only the
+            time-sensitive airing alerts stay one click away up here. */}
         <div className="header-actions">
-          <button
-            className="icon-btn"
-            onClick={onOpenTransfer}
-            aria-label={savedCount > 0 ? 'Move, share, or import your saved list' : 'Import a saved list from another device'}
-            title="Move, share, or import your list"
-          >
-            <Repeat size={16} strokeWidth={2} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={onToggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to day edition' : 'Switch to night edition'}
-            title={theme === 'dark' ? 'Day edition' : 'Night edition'}
-          >
-            {theme === 'dark' ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
-          </button>
           <div className="bell" ref={bellRef}>
             <button
               className="icon-btn"
@@ -337,47 +311,6 @@ export default function Masthead({
               </div>
             )}
           </div>
-          {syncEnabled && (
-            !authReady ? (
-              // Firebase's own session check is async — on a cold start
-              // (a force-closed PWA, a fresh tab) `user` briefly reads
-              // null before it resolves. Rendering the sign-in button
-              // during that gap flashes "signed out" for an instant even
-              // for someone who already is signed in, so hold a neutral
-              // placeholder here until the real answer is known.
-              <span className="account-skeleton" aria-hidden="true" />
-            ) : user ? (
-              <div className="account" ref={accountRef}>
-                <button
-                  className="account-trigger"
-                  onClick={() => setAccountMenuOpen((v) => !v)}
-                  aria-haspopup="true"
-                  aria-expanded={accountMenuOpen}
-                  aria-label={`Synced as ${user.displayName || user.email} — open account menu`}
-                  title={`Synced as ${user.displayName || user.email}`}
-                >
-                  {user.photoURL
-                    ? <img className="account-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />
-                    : <span className="account-avatar avatar-fallback">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>}
-                  <span className="account-name">{user.displayName || user.email}</span>
-                </button>
-                {accountMenuOpen && (
-                  <div className="account-menu" role="menu">
-                    <p className="account-menu-email">{user.email}</p>
-                    <button
-                      className="account-menu-signout"
-                      role="menuitem"
-                      onClick={() => { setAccountMenuOpen(false); onSignOut(); }}
-                    >
-                      <LogOut size={15} strokeWidth={2} /> Log out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <GoogleSignInButton onCredential={onGoogleCredential} />
-            )
-          )}
         </div>
       </div>
     </header>
