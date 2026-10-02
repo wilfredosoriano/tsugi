@@ -146,6 +146,6 @@
     --off-md: 3px;
     --off-lg: 3px;
     --off-modal: 8px;
-    --ask-overlap: 40px;
+    --ask-overlap: 0px; /* no Ask panel over the hero on phones */
   }
 }

@@ -488,9 +488,13 @@ export default function App() {
             </div>
           )}
 
-          <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
-            <AskPanel value={question} onChange={setQuestion} onAsk={startAsk} busy={companion.busy} />
-          </div>
+          {/* Phones reach the chat from the tab bar's raised Ask button, so the
+              panel would only repeat it there. */}
+          {!isPhone && (
+            <div className={`wrap ask-wrap${showHero ? '' : ' no-hero'}`}>
+              <AskPanel value={question} onChange={setQuestion} onAsk={startAsk} busy={companion.busy} />
+            </div>
+          )}
 
           <main className="wrap home">
             <h1 className="sr-only">Tsugi</h1>
