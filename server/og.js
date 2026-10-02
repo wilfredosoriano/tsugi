@@ -56,7 +56,7 @@ export async function buildOgHtml({ id, siteUrl }) {
   // Falls back to the app's own logo card for a bare share (no specific
   // title) — so pasting the plain Tsugi link anywhere still shows an image
   // instead of just clickable text.
-  const image = media?.coverImage?.extraLarge || media?.coverImage?.large || `${siteUrl}/og-image.png`;
+  const image = media?.coverImage?.extraLarge || media?.coverImage?.large || `${siteUrl}/og-image.png?v=2`;
 
   return `<!doctype html>
 <html lang="en">
