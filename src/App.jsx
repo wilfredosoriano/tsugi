@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import Masthead from './components/Masthead.jsx';
-import PageAura from './components/PageAura.jsx';
 import Hero from './components/Hero.jsx';
 import AskPanel from './components/AskPanel.jsx';
 import DetailSheet from './components/DetailSheet.jsx';
@@ -525,7 +524,6 @@ export default function App() {
 
   return (
     <>
-      <PageAura />
       <Masthead
         search={search}
         onSearch={onSearch}

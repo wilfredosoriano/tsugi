@@ -6,7 +6,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #100e0b;
+  --bg: #0d0d12;
   --bg-elevated: #16161d;
   --bg-elevated-2: #202028;
   --text: #f5f5f7;
@@ -37,7 +37,7 @@
 }
 
 :root[data-theme='light'] {
-  --bg: #faf8f2;
+  --bg: #f6f6fa;
   --bg-elevated: #ffffff;
   --bg-elevated-2: #ececf3;
   --text: #14141c;
@@ -68,75 +68,22 @@ body {
   transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
   -webkit-font-smoothing: antialiased;
 }
-/* ── aura background ────────────────────────────────────────
-   Dark ("Abyssal Floor"): two screen-blend gradient layers plus a
-   film-grain overlay. Light ("Ocean Pearl"): two multiply layers with
-   entirely different gradients — screen washes out to nothing over a
-   light backdrop, so the light variant isn't just a recolor. Fixed to
-   the viewport (not the scrolling document) and rendered first in the
-   DOM, so plain stacking order keeps it behind every real element
-   without needing a z-index. See PageAura.jsx. The base color these
-   blend against is `--bg` on body, not a background on the layers
-   themselves — that's what the blend modes composite into. */
-.aura-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
-.aura-layer { position: absolute; inset: 0; transform: translateZ(0); will-change: transform; }
-
-.aura-layer-1 {
-  background: radial-gradient(ellipse 120% 70% at 50% 110%, rgba(0, 90, 110, 0.8) 0%, rgba(0, 45, 60, 0.5) 40%, rgba(0, 0, 0, 0) 75%);
-  mix-blend-mode: screen;
-  filter: blur(180px);
+/* ── page background ────────────────────────────────────────
+   Flat neutral base (`--bg` on body) with two very faint, static accent
+   washes pinned to the viewport — just enough color behind the frosted
+   surfaces (masthead, overlays) for their blur to read as glass. No blend
+   modes, filters or grain: those were the source of earlier compositing
+   and contrast bugs. */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 12% 0%, rgba(124, 108, 255, 0.14), transparent 70%),
+    radial-gradient(55% 40% at 92% 100%, rgba(80, 160, 255, 0.09), transparent 70%);
 }
-.aura-layer-2 {
-  background: linear-gradient(to top, rgba(0, 130, 150, 0.25) 0%, rgba(0, 0, 0, 0) 35%);
-  mix-blend-mode: screen;
-  filter: blur(72px);
-}
-/* baseFrequency is in cycles per SVG user-unit, and without a viewBox a
-   user-unit is just however many CSS pixels the SVG itself is rendered
-   at — so tiling the same markup at a smaller CSS size (the first fix
-   here) didn't actually change the noise's density, only how often the
-   pattern repeats, and it still read as harsh static. What actually
-   softens it: generate the turbulence on a genuinely small native
-   canvas (60x60) so each fluctuation is only a few real pixels wide,
-   then let the browser's own image scaling blow that up to the much
-   bigger on-screen tile — the interpolation from magnifying a small
-   noisy bitmap is what turns it into soft, film-like grain instead of
-   static. */
-.aura-grain {
-  position: absolute; inset: 0; mix-blend-mode: overlay; opacity: 0.08;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.181 0.608 0.061 0 0.075 0.181 0.608 0.061 0 0.075 0.181 0.608 0.061 0 0.075 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 240px 240px;
-}
-
-/* Both layers use multiply, and both ramp to the same fully-opaque
-   rgb(45,100,130) at their 100% stop — stacked, that's two full
-   multiply passes over the same region, which compounds far darker
-   than either layer alone (worked out to near-black in spots, crushing
-   any plain page text sitting there — no text-shadow trick can rescue
-   contrast that low). opacity: 0.45 on both caps how much of that
-   darkening actually lands, so the deepest point stays a readable
-   mid-tone teal instead of collapsing toward black, while keeping the
-   same gradient shape/hue. */
-:root[data-theme='light'] .aura-layer-1 {
-  background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.12) 28%, rgb(255, 255, 255) 18%, rgb(77, 182, 200) 68%, rgb(45, 100, 130) 100%);
-  mix-blend-mode: multiply;
-  filter: blur(130px);
-  opacity: 0.45;
-}
-:root[data-theme='light'] .aura-layer-2 {
-  background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(178, 235, 242, 0.22) 34%, rgb(255, 255, 255) 66%, rgb(77, 182, 200) 82%, rgb(45, 100, 130) 100%);
-  mix-blend-mode: multiply;
-  filter: blur(130px);
-  opacity: 0.45;
-}
-:root[data-theme='light'] .aura-grain { display: none; }
-
-@media (max-width: 720px) {
-  .aura-layer-1 { filter: blur(125px); }
-  .aura-layer-2 { filter: blur(50px); }
-  :root[data-theme='light'] .aura-layer-1,
-  :root[data-theme='light'] .aura-layer-2 { filter: blur(90px); }
+:root[data-theme='light'] body::before {
+  background:
+    radial-gradient(60% 45% at 12% 0%, rgba(91, 75, 240, 0.09), transparent 70%),
+    radial-gradient(55% 40% at 92% 100%, rgba(60, 140, 240, 0.07), transparent 70%);
 }
 
 ::selection { background: var(--accent); color: #fff; }
@@ -170,10 +117,9 @@ img { display: block; }
 main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 
 /* ── masthead ───────────────────────────────────────────── */
-/* Translucent + blurred rather than a solid fill, so the aura
-   background (see PageAura.jsx) still shows — softened and darkened by
-   the blur/tint enough to keep the header's own text and buttons
-   legible over whatever scrolls underneath.
+/* Translucent + blurred rather than a solid fill, so the page
+   behind and the content scrolling underneath show through, softened by
+   the blur/tint enough to keep the header's own text and buttons legible.
 
    The actual bug chased through several earlier attempts was masking
    this element's own alpha (mask-image), which triggers a real
@@ -194,12 +140,12 @@ main.wrap { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
    Never add mask-image here: combined with backdrop-filter it triggers a
    real compositing glitch (chased through several earlier attempts). */
 .masthead.scrolled {
-  background: rgba(16, 14, 11, 0.55);
+  background: rgba(13, 13, 18, 0.55);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
 }
 :root[data-theme='light'] .masthead.scrolled {
-  background: rgba(250, 248, 242, 0.6);
+  background: rgba(246, 246, 250, 0.6);
 }
 .masthead::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
