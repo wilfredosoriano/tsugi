@@ -590,10 +590,13 @@
 .history-year:last-child { margin-bottom: 0; }
 .history-year-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px 14px; }
-.history-item { text-align: left; }
+/* A button vertically centres its contents when the grid row stretches it,
+   so a one-line title pushed its cover below a neighbour's two-line one:
+   stack from the top instead, with the same two-line slot for every title. */
+.history-item { display: flex; flex-direction: column; justify-content: flex-start; align-self: start; text-align: left; }
 .history-item img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; border: var(--bw) solid var(--ink); margin-bottom: 8px; box-shadow: var(--sh-sm); transition: transform var(--dur-1) var(--ease); }
 .history-item:hover img { transform: translate(-2px, -2px); }
-.history-item span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--fs-14); font-weight: 900; line-height: 1.3; }
+.history-item span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; font-size: var(--fs-14); font-weight: 900; line-height: 1.3; }
 
 .recap-sheet { max-width: 440px; }
 .recap-body { padding: 20px 22px 24px; }
