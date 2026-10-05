@@ -252,7 +252,7 @@
 
 .airing-scroll-rail {
   display: flex; gap: 14px; overflow-x: auto; padding: 4px 6px 12px 2px; margin: 0 -2px;
-  scroll-snap-type: x mandatory; scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
 }
 .airing-item {
   flex: 0 0 250px; scroll-snap-align: start; display: flex; gap: 12px; text-align: left; align-items: flex-start;
@@ -296,7 +296,7 @@
 .shelf { position: relative; }
 .shelf-track {
   display: flex; gap: 18px; overflow-x: auto; padding: 6px 10px 18px 4px; margin: 0 -4px;
-  scroll-snap-type: x mandatory; scrollbar-width: thin; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
 }
 .shelf-track > .plate { flex: 0 0 170px; scroll-snap-align: start; }
 .shelf-btn {
@@ -550,7 +550,7 @@
 
 .related { border-top: var(--bw) solid var(--ink); padding: 18px 0; }
 .related > .mono { padding: 0 22px; }
-.related-row { display: flex; gap: 14px; overflow-x: auto; padding: 16px 22px 8px; scrollbar-width: thin; scroll-snap-type: x proximity; }
+.related-row { display: flex; gap: 14px; overflow-x: auto; padding: 16px 22px 8px; scroll-snap-type: x proximity; }
 .related-item { position: relative; flex: 0 0 104px; scroll-snap-align: start; text-align: left; display: flex; flex-direction: column; gap: 8px; }
 .related-item img { width: 104px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; border: var(--bw) solid var(--ink); box-shadow: var(--sh-sm); transition: transform var(--dur-1) var(--ease); }
 .related-item:hover img { transform: translate(-2px, -2px); }
@@ -574,7 +574,7 @@
 .transfer-tabs button:hover { background: var(--selected); color: var(--on-selected); }
 .transfer-tabs button[aria-pressed='true'] { background: var(--sakura-deep); color: var(--white); border-color: var(--ink); box-shadow: var(--sh-sm); }
 .transfer-body { padding: 18px 22px 24px; }
-.transfer-preview { display: flex; gap: 10px; overflow-x: auto; margin: 12px 0; padding: 4px 4px 10px; scrollbar-width: thin; }
+.transfer-preview { display: flex; gap: 10px; overflow-x: auto; margin: 12px 0; padding: 4px 4px 10px; }
 .transfer-preview-item { flex: 0 0 56px; width: 56px; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: var(--surface-2); border: var(--bw-sm) solid var(--ink); }
 .transfer-preview-item img { width: 100%; height: 100%; object-fit: cover; }
 .transfer-body textarea {

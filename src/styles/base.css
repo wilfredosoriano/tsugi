@@ -202,3 +202,16 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 4px
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .x-back { display: none; }
+
+/* Scroll areas inside the app (sheets, menus, side-scrolling rows) scroll
+   without a visible bar. The page itself keeps its scrollbar on desktop. */
+.scrim, .sheet, .history-body, .genre-picker-body, .live-search, .bell-menu-list,
+.airing-scroll-rail, .shelf-track, .related-row, .transfer-preview, .picks-rest {
+  scrollbar-width: none;
+}
+.scrim::-webkit-scrollbar, .sheet::-webkit-scrollbar, .history-body::-webkit-scrollbar,
+.genre-picker-body::-webkit-scrollbar, .live-search::-webkit-scrollbar, .bell-menu-list::-webkit-scrollbar,
+.airing-scroll-rail::-webkit-scrollbar, .shelf-track::-webkit-scrollbar, .related-row::-webkit-scrollbar,
+.transfer-preview::-webkit-scrollbar, .picks-rest::-webkit-scrollbar {
+  display: none;
+}
