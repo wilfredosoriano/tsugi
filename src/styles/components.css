@@ -696,3 +696,8 @@ main.ask-main { padding-bottom: 24px; }
 .msg-card img { width: 40px; height: 56px; object-fit: cover; border-radius: 8px; border: var(--bw-sm) solid var(--ink); flex-shrink: 0; }
 .msg-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .msg-card-title { font-weight: 900; font-size: var(--fs-14); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.history-recap-locked {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  padding: 4px 12px; border-radius: var(--r-pill); border: var(--bw-sm) dashed var(--ink-ui);
+  font-size: var(--fs-14); font-weight: 900; color: var(--text-muted);
+}

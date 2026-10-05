@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Share2 } from 'lucide-react';
+import { X, Share2, Lock } from 'lucide-react';
 import { displayTitle } from '../lib/format.js';
 import RecapCard from './RecapCard.jsx';
 
@@ -10,6 +10,16 @@ import RecapCard from './RecapCard.jsx';
  * it still shows here even after the title is later removed from the
  * want-to-watch list.
  */
+// Like a year-end "wrapped": the current year's recap waits until December,
+// when the year is nearly done. Past years are always available.
+const RECAP_UNLOCK_MONTH = 11; // December (0-based)
+const RECAP_UNLOCK_LABEL = 'Dec 1';
+
+function recapReady(year, now = new Date()) {
+  const y = Number(year);
+  return y < now.getFullYear() || (y === now.getFullYear() && now.getMonth() >= RECAP_UNLOCK_MONTH);
+}
+
 export default function CompletedHistory({ completions, onOpenMedia, onClose }) {
   const [recapYear, setRecapYear] = useState(null);
 
@@ -32,9 +42,15 @@ export default function CompletedHistory({ completions, onOpenMedia, onClose }) 
             <div key={year} className="history-year">
               <div className="history-year-head">
                 <p className="mono">{year} · {completions[year].length} title{completions[year].length === 1 ? '' : 's'}</p>
-                <button className="btn secondary sm history-share-btn" onClick={() => setRecapYear(year)}>
-                  <Share2 size={14} /> Recap
-                </button>
+                {recapReady(year) ? (
+                  <button className="btn secondary sm history-share-btn" onClick={() => setRecapYear(year)}>
+                    <Share2 size={14} /> Recap
+                  </button>
+                ) : (
+                  <span className="history-recap-locked">
+                    <Lock size={14} strokeWidth={2.5} aria-hidden="true" /> Recap unlocks {RECAP_UNLOCK_LABEL}
+                  </span>
+                )}
               </div>
               <div className="history-grid">
                 {completions[year].map((item) => (
