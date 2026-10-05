@@ -94,10 +94,9 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
   const stars = starParts(media.averageScore);
   const studio = media.studios?.nodes?.[0]?.name;
   const links = legalLinks(media);
-  const directSites = new Set(links.map((l) => l.site.toLowerCase()));
-  const otherSearches = searchLinks(title).filter((s) => !directSites.has(s.site.toLowerCase()));
-  const searches = otherSearches.filter((s) => s.licensed);
-  const unlicensedSearches = otherSearches.filter((s) => !s.licensed);
+  // AniList's own link names vary ("Amazon Prime Video"), so match by inclusion.
+  const directSites = links.map((l) => l.site.toLowerCase());
+  const searches = searchLinks(title).filter((s) => !directSites.some((d) => d.includes(s.site.toLowerCase())));
   const synopsis = cleanText(media.description);
   const saved = isSaved?.(media.id);
   const trailerUrl =
@@ -255,21 +254,6 @@ export default function DetailSheet({ media, onClose, onOpenRelated, onSave, isS
                   </a>
                 ))}
               </div>
-
-              {unlicensedSearches.length > 0 && (
-                <div className="watch-unlicensed">
-                  <p className="mono watch-unlicensed-label">Unofficial</p>
-                  <div className="watch-links">
-                    {unlicensedSearches.map((l) => (
-                      <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="watch-link unlicensed">
-                        <Search size={12} />
-                        {l.site}
-                        <ExternalLink size={11} className="watch-link-ext" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

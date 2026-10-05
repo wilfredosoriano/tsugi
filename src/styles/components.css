@@ -545,10 +545,8 @@
 .watch-link:hover { transform: translate(-1px, -1px); box-shadow: var(--sh-sm); }
 .watch-link:active { transform: none; box-shadow: none; }
 .watch-link.official { background: var(--sakura-pale); color: var(--sumi); border-color: var(--sumi); }
-.watch-link.search, .watch-link.unlicensed { background: var(--surface); }
+.watch-link.search { background: var(--surface); }
 .watch-link-ext { opacity: 0.6; }
-.watch-unlicensed { margin-top: 16px; padding-top: 12px; border-top: var(--bw-sm) dashed var(--ink-ui); }
-.watch-unlicensed-label { margin-bottom: 8px; }
 
 .related { border-top: var(--bw) solid var(--ink); padding: 18px 0; }
 .related > .mono { padding: 0 22px; }

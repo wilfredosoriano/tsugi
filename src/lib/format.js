@@ -35,21 +35,13 @@ export function legalLinks(media) {
  * for a given show.
  */
 export const SEARCH_PLATFORMS = [
-  { site: 'Crunchyroll', url: (q) => `https://www.crunchyroll.com/search?q=${encodeURIComponent(q)}`, licensed: true },
-  { site: 'Netflix', url: (q) => `https://www.netflix.com/search?q=${encodeURIComponent(q)}`, licensed: true },
-  { site: 'Prime Video', url: (q) => `https://www.amazon.com/s?k=${encodeURIComponent(q)}&i=instant-video`, licensed: true },
-  // Not licensors — unofficial aggregators. Kept, but flagged and visually
-  // separated (see DetailSheet's "unlicensed" group) rather than mixed in
-  // with the platforms above as if they were equivalent.
-  { site: 'Anikoto TV', url: (q) => `https://anikototv.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
-  { site: 'Anix TV', url: (q) => `https://anixtv.me/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
-  { site: 'Anime SOGO', url: (q) => `https://animesogo.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
-  { site: 'Anichi', url: (q) => `https://anichi.to/filter?keyword=${encodeURIComponent(q)}`, licensed: false },
-  { site: 'Miruro', url: (q) => `https://www.miruro.to/search?query=${encodeURIComponent(q)}&type=ANIME&sort=POPULARITY_DESC`, licensed: false },
+  { site: 'Crunchyroll', url: (q) => `https://www.crunchyroll.com/search?q=${encodeURIComponent(q)}` },
+  { site: 'Netflix', url: (q) => `https://www.netflix.com/search?q=${encodeURIComponent(q)}` },
+  { site: 'Prime Video', url: (q) => `https://www.amazon.com/s?k=${encodeURIComponent(q)}&i=instant-video` },
 ];
 
 export function searchLinks(title) {
-  return SEARCH_PLATFORMS.map((p) => ({ site: p.site, url: p.url(title), licensed: p.licensed }));
+  return SEARCH_PLATFORMS.map((p) => ({ site: p.site, url: p.url(title) }));
 }
 
 export function displayTitle(media) {
