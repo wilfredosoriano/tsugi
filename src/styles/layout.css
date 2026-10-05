@@ -163,14 +163,21 @@ main.home.screen { padding-top: 40px; }
   .toasts { bottom: calc(92px + env(safe-area-inset-bottom)); }
 
   /* chat: the composer rides just above the tab bar */
-  .ask-screen { gap: 16px; min-height: calc(100svh - 230px); }
-  .composer { bottom: calc(102px + env(safe-area-inset-bottom)); padding: 8px; border-radius: var(--r-card); }
+  /* Pinned just above the tab bar regardless of how long the chat is
+     (sticky only kicks in once the page scrolls, which left a gap on short
+     chats). The thread reserves room so nothing hides behind it. */
+  .ask-screen { gap: 16px; min-height: 0; padding-bottom: 86px; }
+  .composer {
+    position: fixed; left: var(--gutter); right: var(--gutter); z-index: 41;
+    bottom: calc(78px + env(safe-area-inset-bottom)); padding: 8px; border-radius: var(--r-card);
+  }
+  .chat-end { scroll-margin-bottom: 180px; }
   .composer textarea { min-height: 46px; }
   .composer-send { width: 52px; min-height: 46px; }
   .msg { gap: 8px; }
   .msg-avatar { width: 34px; height: 34px; font-size: 15px; border-radius: 10px; }
   .msg.user .bubble { max-width: 88%; }
-  .chat-suggestions { padding-left: 0; }
+  .chat-suggestions { padding-left: 0; margin-right: calc(var(--gutter) * -1); padding-right: var(--gutter); }
 
   /* Title details: a full screen with a back arrow, not a bottom sheet. */
   .detail-scrim { padding: 0; align-items: stretch; }
@@ -222,6 +229,11 @@ main.home.screen { padding-top: 40px; }
   }
   :root[data-theme='dark'] .tabbar-ask-circle { border-color: var(--ink-ui); }
   .tabbar-item.tabbar-primary:active .tabbar-ask-circle { transform: translate(var(--off-md), var(--off-md)); box-shadow: none; }
+  /* On the Ask screen itself the raised button would only point at where you
+     already are, so it sits flush and the composer can rest on the bar. */
+  .tabbar-item.tabbar-primary.active .tabbar-ask-circle { width: 34px; height: 34px; margin-top: 0; box-shadow: none; border-width: var(--bw-sm); }
+  .tabbar-item.tabbar-primary.active .tabbar-ask-circle svg { width: 18px; height: 18px; }
+  .tabbar-item.tabbar-primary.active { background: var(--selected); color: var(--on-selected); }
   .tabbar-item.tabbar-primary:active { background: none; }
 }
 

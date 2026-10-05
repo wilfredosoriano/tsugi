@@ -38,7 +38,7 @@ export default function ChatComposer({ onSend, busy }) {
             submit();
           }
         }}
-        placeholder="Ask about anime, or say what you're in the mood for…"
+        placeholder="Ask Tsugi about anime…"
         aria-label="Message the Tsugi companion"
         maxLength={600}
       />
