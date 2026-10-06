@@ -1,10 +1,34 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchCandidatesFromPlan, resolveTitle } from '../lib/anilist.js';
 import { rankPool } from '../lib/rankClient.js';
 import { displayTitle } from '../lib/format.js';
 
 let nextId = 1;
 const newId = () => `m${nextId++}`;
+
+/* Fair-use cap, per device. The AI runs on a shared free-tier budget, so this
+   keeps one person from using it all up; it isn't a security boundary (the
+   free tier can't run up a bill, so a server-side store isn't worth it). */
+export const ASK_LIMIT = 20;
+const WINDOW_MS = 60 * 60 * 1000;
+const LOG_KEY = 'tsugi:askLog';
+
+function readLog(now = Date.now()) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter((t) => typeof t === 'number' && now - t < WINDOW_MS).sort((a, b) => a - b) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLog(log) {
+  try {
+    localStorage.setItem(LOG_KEY, JSON.stringify(log));
+  } catch {
+    // private mode / quota — the cap just won't persist across reloads
+  }
+}
 
 async function postChat(messages, taste) {
   const res = await fetch('/api/chat', {
@@ -13,7 +37,11 @@ async function postChat(messages, taste) {
     body: JSON.stringify({ messages, taste }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    const err = new Error(data.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
@@ -40,6 +68,14 @@ export function useCompanion({ saved, completions }) {
   const [stage, setStage] = useState('');
   const threadRef = useRef([]);
   const busyRef = useRef(false);
+  const [log, setLog] = useState(readLog);
+
+  // Re-read now and then so the count frees up as the hour rolls on.
+  useEffect(() => {
+    if (!log.length) return undefined;
+    const id = setInterval(() => setLog(readLog()), 30000);
+    return () => clearInterval(id);
+  }, [log.length]);
 
   const push = (msg) => {
     threadRef.current = [...threadRef.current, msg];
@@ -49,6 +85,14 @@ export function useCompanion({ saved, completions }) {
   const send = useCallback(async (raw) => {
     const text = String(raw || '').trim();
     if (!text || busyRef.current) return;
+    const used = readLog();
+    if (used.length >= ASK_LIMIT) {
+      setLog(used);
+      return;
+    }
+    const nextLog = [...used, Date.now()];
+    writeLog(nextLog);
+    setLog(nextLog);
     busyRef.current = true;
     setBusy(true);
     push({ id: newId(), role: 'user', text });
@@ -95,7 +139,16 @@ export function useCompanion({ saved, completions }) {
         intent: 'recommend',
       });
     } catch (err) {
-      push({ id: newId(), role: 'assistant', text: err.message || 'Something went wrong. Try again in a moment.', error: true });
+      const busyNow = err.status === 429;
+      push({
+        id: newId(),
+        role: 'assistant',
+        text: busyNow
+          ? 'Lots of people are asking right now. Give it a few seconds, then try again.'
+          : err.message || 'Something went wrong. Try again in a moment.',
+        error: true,
+        retry: text,
+      });
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -109,5 +162,8 @@ export function useCompanion({ saved, completions }) {
     setMessages([]);
   }, []);
 
-  return { messages, busy, stage, send, reset };
+  const remaining = Math.max(0, ASK_LIMIT - log.length);
+  const resetInMin = log.length ? Math.max(1, Math.ceil((log[0] + WINDOW_MS - Date.now()) / 60000)) : 0;
+
+  return { messages, busy, stage, send, reset, remaining, resetInMin };
 }

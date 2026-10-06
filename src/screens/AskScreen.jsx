@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, RefreshCw } from 'lucide-react';
 import PicksShowcase from '../components/PicksShowcase.jsx';
 import { Loading, Note } from '../components/Grid.jsx';
 import RevealHeading from '../components/RevealHeading.jsx';
@@ -32,12 +32,19 @@ function Suggestions({ items, onSend, label }) {
 }
 
 /** The companion chat: a scrolling thread with the composer pinned underneath. */
-export default function AskScreen({ messages, busy, stage, onSend, onReset, onOpen, onSave, isSaved }) {
+export default function AskScreen({ messages, busy, stage, onSend, onReset, onOpen, onSave, isSaved, remaining, resetInMin, limit }) {
   const endRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length, busy]);
+
+  const locked = remaining <= 0;
+  const note = locked
+    ? `You’ve used all ${limit} asks for this hour. You can ask again in ${resetInMin} min.`
+    : remaining <= 3
+      ? `${remaining} ask${remaining === 1 ? '' : 's'} left this hour.`
+      : null;
 
   const last = messages[messages.length - 1];
   const suggestions = !busy && last?.role === 'assistant' && last.suggestions?.length ? last.suggestions : null;
@@ -68,6 +75,11 @@ export default function AskScreen({ messages, busy, stage, onSend, onReset, onOp
           </div>
         ) : (
           <BotMessage key={m.id} text={m.text} error={m.error}>
+            {m.retry && m.id === last?.id && !busy && !locked && (
+              <div className="chips chat-suggestions">
+                <button onClick={() => onSend(m.retry)}><RefreshCw size={14} strokeWidth={2.5} /> Try again</button>
+              </div>
+            )}
             {m.degraded && (
               <Note error><strong>Ranked without AI.</strong> {m.degraded}</Note>
             )}
@@ -107,7 +119,7 @@ export default function AskScreen({ messages, busy, stage, onSend, onReset, onOp
         <div ref={endRef} className="chat-end" />
       </div>
 
-      <ChatComposer onSend={onSend} busy={busy} />
+      <ChatComposer onSend={onSend} busy={busy} locked={locked} note={note} />
     </div>
   );
 }

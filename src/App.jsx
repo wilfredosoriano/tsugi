@@ -15,7 +15,7 @@ import PicksShowcase from './components/PicksShowcase.jsx';
 import TabBar from './components/TabBar.jsx';
 import SavedScreen from './screens/SavedScreen.jsx';
 import AskScreen from './screens/AskScreen.jsx';
-import { useCompanion } from './hooks/useCompanion.js';
+import { useCompanion, ASK_LIMIT } from './hooks/useCompanion.js';
 import { rankPool } from './lib/rankClient.js';
 import ProfileScreen from './screens/ProfileScreen.jsx';
 import { initialView, pathFor, viewFromPath, VIEW_TITLES } from './lib/routes.js';
@@ -609,6 +609,9 @@ export default function App() {
             stage={companion.stage}
             onSend={companion.send}
             onReset={companion.reset}
+            remaining={companion.remaining}
+            resetInMin={companion.resetInMin}
+            limit={ASK_LIMIT}
             onOpen={openMedia}
             onSave={onSave}
             isSaved={isSaved}

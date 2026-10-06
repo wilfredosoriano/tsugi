@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { SendHorizontal } from 'lucide-react';
 
 /** The Ask screen's message box: grows with the text, Enter sends, Shift+Enter adds a line. */
-export default function ChatComposer({ onSend, busy }) {
+export default function ChatComposer({ onSend, busy, locked = false, note = null }) {
   const [text, setText] = useState('');
   const ref = useRef(null);
 
@@ -20,13 +20,14 @@ export default function ChatComposer({ onSend, busy }) {
   }, []);
 
   const submit = () => {
-    if (busy || !text.trim()) return;
+    if (busy || locked || !text.trim()) return;
     onSend(text);
     setText('');
   };
 
   return (
     <form className="composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+      {note && <p className="composer-note" role="status">{note}</p>}
       <textarea
         ref={ref}
         rows={1}
@@ -42,7 +43,7 @@ export default function ChatComposer({ onSend, busy }) {
         aria-label="Message the Tsugi companion"
         maxLength={600}
       />
-      <button className="btn composer-send" type="submit" disabled={busy || !text.trim()} aria-label="Send">
+      <button className="btn composer-send" type="submit" disabled={busy || locked || !text.trim()} aria-label="Send">
         <SendHorizontal size={20} strokeWidth={2.5} />
       </button>
     </form>

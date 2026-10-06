@@ -704,3 +704,7 @@ main.ask-main { padding-bottom: 24px; }
   padding: 4px 12px; border-radius: var(--r-pill); border: var(--bw-sm) dashed var(--ink-ui);
   font-size: var(--fs-14); font-weight: 900; color: var(--text-muted);
 }
+.composer { flex-wrap: wrap; }
+.composer-note { flex-basis: 100%; margin: 0 4px 2px; font-size: var(--fs-14); font-weight: 900; color: var(--text-muted); }
+.msg-body .chat-suggestions { padding-left: 0; }
+.chat-suggestions button svg { vertical-align: -2px; margin-right: 4px; }
