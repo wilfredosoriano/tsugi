@@ -68,6 +68,8 @@ export default function ProfileScreen({
           </div>
         </section>
       </div>
+
+      <p className="app-credit">Tsugi v{__APP_VERSION__} · Made by Fred</p>
     </>
   );
 }

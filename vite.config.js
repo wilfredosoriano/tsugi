@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { rankPicks } from './server/rank.js';
@@ -88,8 +89,11 @@ function devApi(env) {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
   return {
     plugins: [react(), devApi(env)],
     server: { port: 5100 },
+    // Shown on the Profile screen; comes from package.json so it can't go stale.
+    define: { __APP_VERSION__: JSON.stringify(version) },
   };
 });

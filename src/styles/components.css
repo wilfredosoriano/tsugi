@@ -708,3 +708,4 @@ main.ask-main { padding-bottom: 24px; }
 .composer-note { flex-basis: 100%; margin: 0 4px 2px; font-size: var(--fs-14); font-weight: 900; color: var(--text-muted); }
 .msg-body .chat-suggestions { padding-left: 0; }
 .chat-suggestions button svg { vertical-align: -2px; margin-right: 4px; }
+.app-credit { margin-top: 8px; text-align: center; font-size: var(--fs-14); font-weight: 700; color: var(--text-muted); }
